@@ -1,0 +1,15 @@
+{
+  "name": "墨息 · Ink Quiet",
+  "short_name": "墨息",
+  "description": "离线沙盒心理疗愈：水墨、颗粒沙盒、精细创作。无账号、无网络、纯本地。",
+  "lang": "zh-CN",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#efeae0",
+  "theme_color": "#efeae0",
+  "icons": [
+    { "src": "icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" }
+  ]
+}

@@ -34,6 +34,8 @@ auto-update, no data stored.
 
 **In the browser:** just double-click `index.html`. Every asset (engines, three.js, UI) is local — zero network requests, no backend, no account.
 
+**Installable (PWA):** on a phone or desktop browser use "Add to Home Screen" / "Install". It then opens full-screen and keeps working offline — a service worker caches the local files (no account, no server).
+
 If your browser restricts `file://`, serve the folder locally (still offline):
 
 ```bash
@@ -168,5 +170,4 @@ textures/models, so that code path is never triggered.
 ## Ideas for later
 
 - The AI's ink **physically retreats** when the user paints (inject reverse velocity, not just "no new strokes").
-- Service worker → a truly installable PWA.
 - Upgrade the dumb AI to a sketch-RNN-style stroke-sequence model (still optional, still offline).

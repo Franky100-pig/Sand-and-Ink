@@ -612,6 +612,14 @@
     rt = setTimeout(() => { engine.resize(); if (sand) sand.resize() }, 120)
   })
 
+  // ── PWA：仅 http(s) 下注册 Service Worker（桌面 Electron 走 file://，跳过）──
+  // 注册失败也不影响使用；离线缓存逻辑见 sw.js（只缓存本站同名文件）。
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !window.__electron) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {})
+    })
+  }
+
   // 提示语：用户一开始画就淡出
   function setHint(text) { if (hint && !hintGone) hint.textContent = text }
   function fadeHint() {

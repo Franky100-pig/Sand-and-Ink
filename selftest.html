@@ -385,6 +385,16 @@
                 'rain=' + r1 + ' tide=' + r2 + ' off=' + r3)
         }
 
+        // s) PWA / 移动端：manifest 已声明、页面禁用下拉刷新、画布禁用触摸滚动
+        check('PWA manifest 已链接', !!document.querySelector('link[rel="manifest"]'))
+        check('浏览器支持 Service Worker（可安装为 PWA）', 'serviceWorker' in navigator)
+        const ob = getComputedStyle(document.body).overscrollBehavior
+        const ohtml = getComputedStyle(document.documentElement).overscrollBehavior
+        check('页面禁用下拉刷新（overscroll-behavior: none）', ob === 'none' || ohtml === 'none',
+              'body=' + ob + ' html=' + ohtml)
+        check('画布禁用触摸滚动（touch-action: none）',
+              getComputedStyle(document.getElementById('stage')).touchAction === 'none')
+
         state.aiOn = false
         hook.setMode('ink')
       }

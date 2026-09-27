@@ -64,6 +64,13 @@
       <input id="ai-size" type="range" min="0.4" max="2.5" step="0.1" value="0.8" />
     </label>
 
+    <div class="group" id="sound-group">
+      <button id="sound" class="toggle" data-i18n-title="soundAria" aria-pressed="false">声音</button>
+      <label class="slider sound-only"><span data-i18n="soundVol">音量</span>
+        <input id="sound-vol" type="range" min="0" max="1" step="0.05" value="0.5" />
+      </label>
+    </div>
+
     <button id="clear" class="ghost" data-i18n="clear">归零</button>
     <button id="export" class="ghost" data-i18n="save">存图</button>
     <button id="hide" class="ghost" data-i18n="hide" data-i18n-title="hideTip" title="隐藏工具栏（快捷键 C）">隐藏</button>
@@ -77,6 +84,7 @@
   <script src="lib/three.min.js"></script>
   <script src="lib/suminagashi.js"></script>
   <script src="lib/sandsim.js"></script>
+  <script src="src/sound.js"></script>
   <script src="src/app.js"></script>
 </body>
 </html>

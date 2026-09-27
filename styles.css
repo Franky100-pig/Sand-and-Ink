@@ -133,6 +133,10 @@ button.toggle:hover, button.ghost:hover { background: rgba(255,255,255,0.16); }
 button.toggle.on { background: var(--accent); border-color: var(--accent); }
 button.toggle.off { opacity: 0.7; }
 
+/* 环境音：音量滑块仅在开启音景时显示 */
+.sound-only { display: none; }
+body.sound-on .sound-only { display: flex; }
+
 #hint {
   position: fixed;
   left: 50%;

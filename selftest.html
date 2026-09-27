@@ -46,6 +46,7 @@
   <script src="lib/three.min.js"></script>
   <script src="lib/suminagashi.js"></script>
   <script src="lib/sandsim.js"></script>
+  <script src="src/sound.js"></script>
   <script src="src/app.js"></script>
   <script>
   (function () {
@@ -371,6 +372,18 @@
         hook.setMode('ink')
         check('墨转精保留画面（新创作按归零清空）', kept,
               'before=' + inkBefore.toFixed(4) + ' after=' + inkAfter.toFixed(4))
+
+        // r) 环境音景（纯合成，无需真实音频输出即可验证 API 与状态切换）
+        check('音景模块已加载', !!window.Soundscape)
+        if (window.Soundscape) {
+          const SS = window.Soundscape
+          SS.setPreset('rain'); const r1 = SS.current()
+          SS.setPreset('tide'); const r2 = SS.current()
+          SS.setPreset('off'); const r3 = SS.current()
+          SS.setVolume(0.4)
+          check('音景可在 关 / 雨 / 潮 间切换', r1 === 'rain' && r2 === 'tide' && r3 === 'off',
+                'rain=' + r1 + ' tide=' + r2 + ' off=' + r3)
+        }
 
         state.aiOn = false
         hook.setMode('ink')

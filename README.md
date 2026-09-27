@@ -103,6 +103,7 @@ textures/models, so that code path is never triggered.
   (dye dissipation is near zero: ~12% after ten minutes idle), but it still bleeds naturally.
 - **AI companion**: on/off. When on, it paints a stroke whenever you've been quiet for a bit; it steps away the moment you draw.
 - **AI patience**: how long it waits between strokes (higher = slower, less intrusive).
+- **Soundscape** (声音 / Sound): a quiet ambience you can turn on — it cycles **off → rain (雨) → tide (潮)**. It is *synthesized live in your browser* (filtered noise + a slow swell), not an audio file, so it stays 100% offline with nothing to download and no licensing to worry about. A small **volume** slider appears only while sound is on. Default off.
 - **Clear**: empties the paper; ink starts fresh from blank.
 - **Save**: exports the current frame as PNG (via `toBlob`, robust on `file://` and Safari).
   Note: **the WorkBuddy preview iframe blocks downloads** — open `index.html` in a real browser

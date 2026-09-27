@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="墨息 Ink Quiet">
+  <rect width="512" height="512" rx="96" fill="#efeae0"/>
+  <ellipse cx="216" cy="252" rx="118" ry="148" fill="#1a1a1f" opacity="0.9"/>
+  <circle cx="332" cy="300" r="58" fill="#1a1a1f" opacity="0.5"/>
+  <path d="M300 150 q42 28 12 82 q-30 30 -8 -12 q22 -42 2 -70 z" fill="#16407a" opacity="0.85"/>
+  <circle cx="384" cy="384" r="11" fill="#d9c69a"/>
+  <circle cx="404" cy="362" r="7" fill="#d9c69a" opacity="0.8"/>
+  <circle cx="366" cy="368" r="5" fill="#d9c69a" opacity="0.7"/>
+</svg>

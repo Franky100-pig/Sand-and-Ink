@@ -15,6 +15,7 @@ html, body {
   background: var(--paper);
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;   /* 手机上禁止下拉刷新 / 橡皮筋，保持沉浸 */
 }
 
 #stage {
@@ -45,12 +46,14 @@ body.mode-sand #sand-stage { display: block; }
 #bar {
   position: fixed;
   left: 50%;
-  bottom: 14px;
+  bottom: max(14px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 7px 12px;
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
   max-width: calc(100vw - 24px);
   flex-wrap: wrap;
   justify-content: center;
@@ -133,10 +136,14 @@ button.toggle:hover, button.ghost:hover { background: rgba(255,255,255,0.16); }
 button.toggle.on { background: var(--accent); border-color: var(--accent); }
 button.toggle.off { opacity: 0.7; }
 
+/* 环境音：音量滑块仅在开启音景时显示 */
+.sound-only { display: none; }
+body.sound-on .sound-only { display: flex; }
+
 #hint {
   position: fixed;
   left: 50%;
-  top: 22px;
+  top: max(22px, env(safe-area-inset-top));
   transform: translateX(-50%);
   margin: 0;
   z-index: 5;

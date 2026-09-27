@@ -41,6 +41,7 @@
       matSteam: '蒸汽（上升 / 凝回水滴）',
       ariaBar: '画具', ariaMode: '物态', ariaInks: '你的墨色', ariaMats: '你的材料',
       immersive: '按 C 呼出工具栏',
+      sound: '声音', soundRain: '雨', soundTide: '潮', soundVol: '音量', soundAria: '环境音',
       langTitle: '切换语言 / Language',
     },
     en: {
@@ -64,6 +65,7 @@
       ariaBar: 'Tools', ariaMode: 'Mode', ariaInks: 'Your inks', ariaMats: 'Your materials',
       immersive: '按 C 呼出工具栏',
       immersive: 'Press C to show the toolbar',
+      sound: 'Sound', soundRain: 'Rain', soundTide: 'Tide', soundVol: 'Vol', soundAria: 'Ambience',
       langTitle: '切换语言 / Language',
     },
   }
@@ -534,6 +536,30 @@
     state.aiSize = parseFloat(e.target.value)
   })
 
+  // ── 环境音景（纯合成白噪声，离线、无文件）──
+  // 按钮循环：关 → 雨 → 潮；音量滑块仅在开启时显示。默认关（隐私 + 安静）。
+  const soundBtn = $('sound')
+  const soundVol = $('sound-vol')
+  function refreshSoundBtn() {
+    if (!soundBtn || !window.Soundscape) return
+    const cur = window.Soundscape.current()
+    const dict = I18N[state.lang] || I18N.zh
+    const label = cur === 'off' ? dict.sound : (cur === 'rain' ? dict.soundRain : dict.soundTide)
+    soundBtn.textContent = label
+    soundBtn.setAttribute('aria-label', dict.soundAria + '：' + label)
+    soundBtn.classList.toggle('on', cur !== 'off')
+    document.body.classList.toggle('sound-on', cur !== 'off')
+  }
+  on(soundBtn, 'click', () => {
+    if (!window.Soundscape) return
+    const cur = window.Soundscape.current()
+    const next = cur === 'off' ? 'rain' : (cur === 'rain' ? 'tide' : 'off')
+    window.Soundscape.setPreset(next)   // 首次开启发生在用户点击这一手势内，满足自动播放策略
+    refreshSoundBtn()
+  })
+  on(soundVol, 'input', (e) => { if (window.Soundscape) window.Soundscape.setVolume(parseFloat(e.target.value)) })
+  if (window.Soundscape) refreshSoundBtn()
+
   on($('clear'), 'click', () => {
     // 归零：清空画布，并取消沙模式下 AI 正在进行的连浇，让它成为一次真正的重置
     if (state.mode === 'sand' && sand) { sand.clear(); aiPour = null }
@@ -586,6 +612,14 @@
     rt = setTimeout(() => { engine.resize(); if (sand) sand.resize() }, 120)
   })
 
+  // ── PWA：仅 http(s) 下注册 Service Worker（桌面 Electron 走 file://，跳过）──
+  // 注册失败也不影响使用；离线缓存逻辑见 sw.js（只缓存本站同名文件）。
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !window.__electron) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {})
+    })
+  }
+
   // 提示语：用户一开始画就淡出
   function setHint(text) { if (hint && !hintGone) hint.textContent = text }
   function fadeHint() {
@@ -597,7 +631,7 @@
   setTimeout(fadeHint, 6000) // 没动手也 6 秒后淡出
 
   // 测试钩子：只给 selftest.html 用，正常打开页面时无副作用。
-  window.__ink = { engine, sand, state, aiTick, advanceAiPour, setMode }
+  window.__ink = { engine, sand, state, aiTick, advanceAiPour, setMode, sound: window.Soundscape }
 
   } catch (fatal) {
     // 任何初始化期异常都暴露给 selftest，而不是让页面静默崩溃

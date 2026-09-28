@@ -47,6 +47,7 @@
   <script src="lib/suminagashi.js"></script>
   <script src="lib/sandsim.js"></script>
   <script src="src/sound.js"></script>
+  <script src="src/movie.js"></script>
   <script src="src/app.js"></script>
   <script>
   (function () {
@@ -385,7 +386,29 @@
                 'rain=' + r1 + ' tide=' + r2 + ' off=' + r3)
         }
 
-        // s) PWA / 移动端：manifest 已声明、页面禁用下拉刷新、画布禁用触摸滚动
+        // s) 短视频录制（离线、零网络；把创作过程重新定时到约 15 秒）
+        check('录制模块已加载', !!window.Movie, window.Movie ? '' : '缺失')
+        if (window.Movie) {
+          const M = window.Movie
+          const sup = M.supported()
+          check('录制能力可被探测（真/假皆可，不崩溃）', typeof sup === 'boolean', 'supported=' + sup)
+          const map = M._mapIndex
+          check('时间映射：首帧=0、末帧=上限', map(0, 100) === 0 && map(449, 100) === 99,
+                'f0=' + map(0, 100) + ' f449=' + map(449, 100))
+          check('时间映射：N=1 恒为 0（避免除零）', map(200, 1) === 0, 'n1=' + map(200, 1))
+          // 生命周期：start 进入录制态；stop 返回 Promise；空录制安全退出（await 保证计入结果）
+          const r1 = M.start(function () { return document.createElement('canvas') })
+          check('start 后处于录制态', M.isRecording() === true, 'ok=' + JSON.stringify(r1))
+          const p2 = M.stop()
+          check('stop 返回 Promise（不抛）', p2 && typeof p2.then === 'function', 'type=' + (p2 && typeof p2.then))
+          await p2
+          M.start(function () { return document.createElement('canvas') })
+          const r3 = await M.stop()
+          check('空录制安全退出（too-short，不崩溃）', r3 && r3.ok === false && r3.reason === 'too-short',
+                'r=' + JSON.stringify(r3))
+        }
+
+        // t) PWA / 移动端：manifest 已声明、页面禁用下拉刷新、画布禁用触摸滚动
         check('PWA manifest 已链接', !!document.querySelector('link[rel="manifest"]'))
         check('浏览器支持 Service Worker（可安装为 PWA）', 'serviceWorker' in navigator)
         const ob = getComputedStyle(document.body).overscrollBehavior

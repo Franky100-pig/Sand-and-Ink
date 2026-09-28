@@ -181,3 +181,19 @@ body.bar-hidden #hint { display: none; }
 }
 body.bar-hidden #immersive-note { display: block; }
 #immersive-note.show { opacity: 1; }
+
+/* 录制按钮：录制态显示脉动的红点，直观提示“正在记录” */
+#movie.rec { color: #b23b2e; font-weight: 600; }
+#movie.rec::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #b23b2e;
+  vertical-align: middle;
+  animation: movie-pulse 1s ease-in-out infinite;
+}
+@keyframes movie-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+#movie:disabled { opacity: 0.6; cursor: default; }

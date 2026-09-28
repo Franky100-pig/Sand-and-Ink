@@ -42,6 +42,8 @@
       ariaBar: '画具', ariaMode: '物态', ariaInks: '你的墨色', ariaMats: '你的材料',
       immersive: '按 C 呼出工具栏',
       sound: '声音', soundRain: '雨', soundTide: '潮', soundVol: '音量', soundAria: '环境音',
+      movie: '录制', movieStop: '停止', movieProcessing: '生成中…', movieTooShort: '录太短', movieUnsupported: '不支持',
+      movieTip: '把创作过程录成约 15 秒小视频（再点一次结束）',
       langTitle: '切换语言 / Language',
     },
     en: {
@@ -66,6 +68,8 @@
       immersive: '按 C 呼出工具栏',
       immersive: 'Press C to show the toolbar',
       sound: 'Sound', soundRain: 'Rain', soundTide: 'Tide', soundVol: 'Vol', soundAria: 'Ambience',
+      movie: 'Record', movieStop: 'Stop', movieProcessing: 'Encoding…', movieTooShort: 'Too short', movieUnsupported: 'No video',
+      movieTip: 'Record your creation as a ~15s clip (tap again to finish)',
       langTitle: '切换语言 / Language',
     },
   }
@@ -336,6 +340,23 @@
     return best || { x: 0.5, y: 0.5 }
   }
 
+  // 合成抓取：把墨画布（WebGL）与沙画布（2D）叠成一张，供录制用。
+  // 沙模式下额外 re-render 一次墨引擎，确保 WebGL 缓冲此刻有效（drawImage 同帧读取）。
+  const capCv = document.createElement('canvas')
+  const capCtx = capCv.getContext('2d')
+  function grabComposite() {
+    if (state.mode === 'sand' && engine) engine.render(performance.now())
+    const stageCv = engine ? engine.renderer.domElement : null
+    const sandCv = (state.mode === 'sand' && sand) ? sand.canvas : null
+    const w = stageCv ? stageCv.width : (sandCv ? sandCv.width : 800)
+    const h = stageCv ? stageCv.height : (sandCv ? sandCv.height : 600)
+    capCv.width = w; capCv.height = h
+    capCtx.clearRect(0, 0, w, h)
+    if (stageCv) { try { capCtx.drawImage(stageCv, 0, 0, w, h) } catch (e) {} }
+    if (sandCv) { try { capCtx.drawImage(sandCv, 0, 0, w, h) } catch (e) {} }
+    return capCv
+  }
+
   // ── 主循环：模拟一直推进，墨才会持续洇开、呼吸 ──
   let last = performance.now()
   function frame(now) {
@@ -349,6 +370,8 @@
       sand.step(dt)
       sand.render(now)
     }
+    // 短视频录制：仅在录制态抓取合成画面（Movie 内部节流到 ~10fps）
+    if (window.Movie && window.Movie.isRecording()) window.Movie.capture(grabComposite())
     aiTick(now)
     if (state.mode === 'sand') advanceAiPour(now)
     requestAnimationFrame(frame)
@@ -605,6 +628,44 @@
     }
   })
 
+  // ── 短视频录制：关 → 开 → 关，导出约 15 秒 WebM/MP4（离线、零网络）──
+  const movieBtn = $('movie')
+  let movieBusy = false
+  function movieDict() { return I18N[state.lang] || I18N.zh }
+  function movieRevert(btn, text, ms) { setTimeout(() => { if (btn) btn.textContent = text }, ms || 1600) }
+  on(movieBtn, 'click', () => {
+    if (!movieBtn || movieBusy || !window.Movie) return
+    const d = movieDict()
+    if (window.Movie.isRecording()) {
+      movieBtn.textContent = d.movieProcessing
+      movieBtn.classList.remove('rec')
+      movieBtn.disabled = true
+      movieBusy = true
+      window.Movie.stop().then((r) => {
+        movieBusy = false
+        movieBtn.disabled = false
+        if (r && r.ok) {
+          movieBtn.textContent = d.saved
+          movieRevert(movieBtn, d.movie, 1800)
+        } else {
+          const msg = (r && r.reason === 'too-short') ? d.movieTooShort
+            : (r && r.reason === 'unsupported') ? d.movieUnsupported : d.movie
+          movieBtn.textContent = msg
+          movieRevert(movieBtn, d.movie, 2000)
+        }
+      })
+    } else {
+      const res = window.Movie.start(grabComposite)
+      if (!res || !res.ok) {
+        movieBtn.textContent = d.movieUnsupported
+        movieRevert(movieBtn, d.movie, 2000)
+        return
+      }
+      movieBtn.textContent = d.movieStop
+      movieBtn.classList.add('rec')
+    }
+  })
+
   // 窗口尺寸变化：两个引擎都重算模拟分辨率
   let rt = 0
   window.addEventListener('resize', () => {
@@ -631,7 +692,7 @@
   setTimeout(fadeHint, 6000) // 没动手也 6 秒后淡出
 
   // 测试钩子：只给 selftest.html 用，正常打开页面时无副作用。
-  window.__ink = { engine, sand, state, aiTick, advanceAiPour, setMode, sound: window.Soundscape }
+  window.__ink = { engine, sand, state, aiTick, advanceAiPour, setMode, sound: window.Soundscape, movie: window.Movie }
 
   } catch (fatal) {
     // 任何初始化期异常都暴露给 selftest，而不是让页面静默崩溃

@@ -111,6 +111,14 @@ textures/models, so that code path is never triggered.
   Note: **the WorkBuddy preview iframe blocks downloads** — open `index.html` in a real browser
   and click Save there; the file goes to your downloads folder. The button flashes
   "已保存 ✓" (saved) as feedback.
+- **Save Movie** (录制 / Record): records your *process*, not just the final frame, and exports a
+  short clip (~15s). Click **录制** to start, create, then click **停止** to finish — the recording
+  is re-timed to ≈15 seconds regardless of how long you actually drew (a long session is compressed,
+  a short one is slowed down). It is encoded entirely in the browser with `MediaRecorder` +
+  `captureStream` (WebM/VP9, or MP4 where supported) — fully offline, no upload, no files.
+  Note: like Save, the download is blocked inside the WorkBuddy preview; open `index.html` in a
+  real browser to get the file. If your browser can't encode video, the button reports "不支持"
+  (No video) instead of failing.
 
 ### Sand mode (toggle to 「沙」)
 

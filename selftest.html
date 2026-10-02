@@ -396,6 +396,15 @@
           check('时间映射：首帧=0、末帧=上限', map(0, 100) === 0 && map(449, 100) === 99,
                 'f0=' + map(0, 100) + ' f449=' + map(449, 100))
           check('时间映射：N=1 恒为 0（避免除零）', map(200, 1) === 0, 'n1=' + map(200, 1))
+          // 导出格式：MP4 必须排在 WebM 前面（最常见、相册/微信/iOS 直接认）
+          const cands = M._candidates || []
+          const iMp4 = cands.findIndex(function (m) { return m.indexOf('mp4') >= 0 })
+          const iWebm = cands.findIndex(function (m) { return m.indexOf('webm') >= 0 })
+          check('导出格式优先 MP4（MP4 排在 WebM 之前）', iMp4 >= 0 && iWebm > iMp4,
+                'mp4@' + iMp4 + ' webm@' + iWebm)
+          const pm = M._pickMime()
+          check('首选格式可被解析（字符串或 null，不抛）',
+                pm === null || typeof pm === 'string', 'pick=' + pm)
           // 生命周期：start 进入录制态；stop 返回 Promise；空录制安全退出（await 保证计入结果）
           const r1 = M.start(function () { return document.createElement('canvas') })
           check('start 后处于录制态', M.isRecording() === true, 'ok=' + JSON.stringify(r1))

@@ -417,19 +417,32 @@
                 'r=' + JSON.stringify(r3))
         }
 
-        // s2) 录制按钮真的绑定了 handler。
-        // 防的是「HTML 是新的、app.js 是旧的」这种半新半旧：按钮看得见，点下去毫无反应。
-        // 2026-10-02 真实踩到过（Service Worker cache-first 供了旧 app.js）。
+        // s2) 录制按钮：必须真的绑定 handler，并且点击后产生**可观察的结果**。
+        // 防的是「HTML 是新的、app.js 是旧的」这种半新半旧 —— 按钮看得见、点下去毫无反应。
+        // 2026-10-02 真实踩到过：Service Worker cache-first 供了旧 app.js（见 issue #2）。
+        // 判定标准（任一即可）：
+        //   · 模块可用 → 点击后进入录制态（状态变化）
+        //   · 模块不可用 → 点击后给出**明确的不支持提示**（文本变化），而不是静默
+        //   · 两者都不成立 → 说明没有 handler，判定失败
         const movieBtn = document.getElementById('movie')
-        if (movieBtn) {
-          const beforeTxt = movieBtn.textContent
-          movieBtn.click()
-          check('录制按钮已绑定（点击后必定有反应，不会静默失效）',
-                movieBtn.textContent !== beforeTxt,
-                'before="' + beforeTxt + '" after="' + movieBtn.textContent + '"')
-          if (window.Movie && window.Movie.isRecording()) await window.Movie.stop()
+        if (!movieBtn) {
+          check('点击录制按钮产生可观察反应（录制态或明确提示）', false, '#movie 按钮缺失')
         } else {
-          check('录制按钮已绑定（点击后必定有反应，不会静默失效）', false, '#movie 按钮不存在')
+          const idleTxt = movieBtn.textContent
+          const canRecord = !!(window.Movie && window.Movie.supported())
+          movieBtn.click()
+          let reacted, detail
+          if (canRecord) {
+            reacted = window.Movie.isRecording() === true
+            detail = 'recording=' + window.Movie.isRecording()
+          } else {
+            reacted = movieBtn.textContent !== idleTxt
+            detail = 'unsupportedMessage="' + movieBtn.textContent + '"'
+          }
+          check('点击录制按钮产生可观察反应（录制态或明确提示；无 handler 即失败）',
+                reacted,
+                'canRecord=' + canRecord + ' idle="' + idleTxt + '" ' + detail)
+          if (window.Movie && window.Movie.isRecording()) await window.Movie.stop()
         }
 
         // t) PWA / 移动端：manifest 已声明、页面禁用下拉刷新、画布禁用触摸滚动

@@ -36,7 +36,9 @@ auto-update, no data stored.
 
 **Installable (PWA):** on a phone or desktop browser use "Add to Home Screen" / "Install". It then opens full-screen and keeps working offline — a service worker caches the local files (no account, no server).
 
-> **Maintaining the service worker:** whenever you change the contents of any file listed in `ASSETS`, bump `CACHE` in `sw.js` (e.g. `ink-quiet-v2` → `v3`). The page itself is network-first, so a *stale* worker can otherwise pair a fresh `index.html` with an old `src/app.js` — the UI then shows a button whose JS handler doesn't exist yet, and clicking it silently does nothing. Static assets use stale-while-revalidate as a second line of defence, but bumping the version is what clears the old cache immediately.
+> **Maintaining the service worker:** whenever you change the contents of any file listed in `ASSETS`, bump `CACHE` in `sw.js` (e.g. `ink-quiet-v3` → `v4`). The page itself is network-first, so a *stale* worker can otherwise pair a fresh `index.html` with an old `src/app.js` — the UI then shows a button whose JS handler doesn't exist yet, and clicking it silently does nothing. Static assets use stale-while-revalidate as a second line of defence, and `install` fetches with `cache: 'reload'` so it can never pre-cache an HTTP-cached stale copy — but bumping the version is what clears the old cache immediately.
+>
+> **If a deployed update seems not to appear:** a browser that already has the site open keeps running the JS it loaded — reload the page. To be sure whether it's the server or your cache, open the site in a **private/incognito window** (no service worker, no cache): if it works there, the deploy is fine and it's your browser's cache. To force a clean slate: DevTools → Application → Service Workers → **Unregister**, then reload. Sites opened before a failed update can be one generation behind; a fresh visitor is never affected.
 
 If your browser restricts `file://`, serve the folder locally (still offline):
 

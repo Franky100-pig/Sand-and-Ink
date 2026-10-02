@@ -6,7 +6,7 @@
  * ⚠️ 维护约定：只要改了下面 ASSETS 里任何一个文件的内容或清单，
  *    必须同时把 CACHE 的版本号 +1。原因见下面 install / fetch 的注释。
  */
-const CACHE = 'ink-quiet-v2'
+const CACHE = 'ink-quiet-v3'
 const ASSETS = [
   'index.html',
   'styles.css',
@@ -21,9 +21,18 @@ const ASSETS = [
 ]
 
 self.addEventListener('install', (e) => {
-  // addAll 是原子的：任一文件取不到，整次安装失败、旧 SW 继续留任。
+  // 逐个 fetch 而不是 addAll，两个原因：
+  //  1) `cache: 'reload'` 绕过 HTTP 缓存 —— 否则预缓存可能把浏览器/CDN 缓存的**旧副本**
+  //     当成新资源塞进新缓存（GitHub Pages 的 max-age=600 会让这件事真的发生）。
+  //  2) addAll 是原子的：任一文件失败整次安装就作废、旧 SW 继续留任；逐个来则单个失败无妨。
   e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then((c) => Promise.all(ASSETS.map((u) =>
+        fetch(new Request(u, { cache: 'reload' }))
+          .then((res) => { if (res && res.ok) return c.put(u, res) })
+          .catch(() => {})
+      )))
+      .then(() => self.skipWaiting())
   )
 })
 

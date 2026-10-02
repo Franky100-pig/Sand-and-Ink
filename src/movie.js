@@ -25,11 +25,35 @@
       typeof HTMLCanvasElement.prototype.captureStream === 'function'
   }
 
+  // 编码格式候选：MP4(H.264) 优先——最常见，相册 / 微信 / iOS 直接能播能转，
+  // 也免得手机上还要拿 WebM 去转码。浏览器不支持就逐级退到 WebM：
+  // Safari / Chrome / Edge 会用上 MP4，Firefox 只支持 WebM，会自动落到后三个。
+  var MIME_CANDS = [
+    'video/mp4;codecs=avc1.42E01E',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm'
+  ]
+
   function pickMime() {
     if (!supported()) return null
-    var cands = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']
-    for (var i = 0; i < cands.length; i++) {
-      try { if (MediaRecorder.isTypeSupported(cands[i])) return cands[i] } catch (e) {}
+    for (var i = 0; i < MIME_CANDS.length; i++) {
+      try { if (MediaRecorder.isTypeSupported(MIME_CANDS[i])) return MIME_CANDS[i] } catch (e) {}
+    }
+    return null
+  }
+
+  // isTypeSupported 有时过于乐观（报 true 但构造失败），所以逐个真造一次，
+  // 哪个真的能建起来就用哪个。全都不行返回 null。
+  function chooseRecorder(stream) {
+    for (var i = 0; i < MIME_CANDS.length; i++) {
+      var m = MIME_CANDS[i]
+      try { if (!MediaRecorder.isTypeSupported(m)) continue } catch (e) { continue }
+      try {
+        return { rec: new MediaRecorder(stream, { mimeType: m, videoBitsPerSecond: 4000000 }), mime: m }
+      } catch (e2) { /* 这个格式建不起来，试下一个 */ }
     }
     return null
   }
@@ -57,6 +81,10 @@
     supported: supported,
     isRecording: function () { return this._rec },
     frameCount: function () { return this._frames.length },
+
+    // 格式候选顺序（测试用）：MP4 必须排在 WebM 前面
+    _candidates: MIME_CANDS,
+    _pickMime: pickMime,
 
     // 把源帧索引映射到 450 个输出帧（最近邻）。N<=1 时恒为 0。供测试与编码共用。
     _mapIndex: function (i, n) {
@@ -103,14 +131,13 @@
       this._frames = []
       if (!supported()) return Promise.resolve({ ok: false, reason: 'unsupported' })
       if (frames.length < 2) return Promise.resolve({ ok: false, reason: 'too-short', count: frames.length })
-      var mime = pickMime()
-      if (!mime) return Promise.resolve({ ok: false, reason: 'no-mime' })
-      return encode(frames, mime)
+      if (!pickMime()) return Promise.resolve({ ok: false, reason: 'no-mime' })
+      return encode(frames)
     }
   }
 
   // 把 N 帧重新定时为 450 输出帧（≈15s），实时绘制进输出画布并由 MediaRecorder 采集。
-  function encode(frames, mime) {
+  function encode(frames) {
     return blobToBitmap(frames[0]).then(function (first) {
       var w = first.width, h = first.height
       if (first.close) first.close()
@@ -120,9 +147,11 @@
       var octx = out.getContext('2d')
       var stream
       try { stream = out.captureStream(OUT_FPS) } catch (e) { return Promise.resolve({ ok: false, reason: 'capturestream', err: String(e) }) }
-      var rec
-      try { rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4000000 }) }
-      catch (e) { return Promise.resolve({ ok: false, reason: 'mediarecorder', err: String(e) }) }
+      // 优先 MP4，构造失败自动退到下一个候选（见 MIME_CANDS）
+      var picked = chooseRecorder(stream)
+      if (!picked) return Promise.resolve({ ok: false, reason: 'mediarecorder' })
+      var rec = picked.rec
+      var mime = picked.mime
 
       var chunks = []
       rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data) }

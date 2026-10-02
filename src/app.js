@@ -628,7 +628,7 @@
     }
   })
 
-  // ── 短视频录制：关 → 开 → 关，导出约 15 秒 WebM/MP4（离线、零网络）──
+  // ── 短视频录制：关 → 开 → 关，导出约 15 秒 MP4（不支持则 WebM）（离线、零网络）──
   const movieBtn = $('movie')
   let movieBusy = false
   function movieDict() { return I18N[state.lang] || I18N.zh }

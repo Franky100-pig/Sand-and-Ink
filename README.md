@@ -36,6 +36,8 @@ auto-update, no data stored.
 
 **Installable (PWA):** on a phone or desktop browser use "Add to Home Screen" / "Install". It then opens full-screen and keeps working offline — a service worker caches the local files (no account, no server).
 
+> **Maintaining the service worker:** whenever you change the contents of any file listed in `ASSETS`, bump `CACHE` in `sw.js` (e.g. `ink-quiet-v2` → `v3`). The page itself is network-first, so a *stale* worker can otherwise pair a fresh `index.html` with an old `src/app.js` — the UI then shows a button whose JS handler doesn't exist yet, and clicking it silently does nothing. Static assets use stale-while-revalidate as a second line of defence, but bumping the version is what clears the old cache immediately.
+
 If your browser restricts `file://`, serve the folder locally (still offline):
 
 ```bash

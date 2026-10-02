@@ -677,7 +677,10 @@
   // 注册失败也不影响使用；离线缓存逻辑见 sw.js（只缓存本站同名文件）。
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !window.__electron) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {})
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        // 主动问一次有没有新版本：否则浏览器可能要等下一次导航才发现 SW 变了。
+        try { reg.update() } catch (e) {}
+      }).catch(() => {})
     })
   }
 

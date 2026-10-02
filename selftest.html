@@ -417,6 +417,21 @@
                 'r=' + JSON.stringify(r3))
         }
 
+        // s2) 录制按钮真的绑定了 handler。
+        // 防的是「HTML 是新的、app.js 是旧的」这种半新半旧：按钮看得见，点下去毫无反应。
+        // 2026-10-02 真实踩到过（Service Worker cache-first 供了旧 app.js）。
+        const movieBtn = document.getElementById('movie')
+        if (movieBtn) {
+          const beforeTxt = movieBtn.textContent
+          movieBtn.click()
+          check('录制按钮已绑定（点击后必定有反应，不会静默失效）',
+                movieBtn.textContent !== beforeTxt,
+                'before="' + beforeTxt + '" after="' + movieBtn.textContent + '"')
+          if (window.Movie && window.Movie.isRecording()) await window.Movie.stop()
+        } else {
+          check('录制按钮已绑定（点击后必定有反应，不会静默失效）', false, '#movie 按钮不存在')
+        }
+
         // t) PWA / 移动端：manifest 已声明、页面禁用下拉刷新、画布禁用触摸滚动
         check('PWA manifest 已链接', !!document.querySelector('link[rel="manifest"]'))
         check('浏览器支持 Service Worker（可安装为 PWA）', 'serviceWorker' in navigator)

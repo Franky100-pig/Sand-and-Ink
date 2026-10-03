@@ -15,6 +15,15 @@ Both halves are **sandbox games for decompressing** — no scores, no levels, no
 
 There is no backend, no account, no tracking, and no network access at all.
 
+## Screenshots
+
+| Ink | Sand | Fine art |
+| :--: | :--: | :--: |
+| [![Ink mode: blue and red ink bleeding across rice paper while the AI companion paints](docs/screenshots/ink.jpg)](docs/screenshots/ink.jpg) | [![Sand mode: two sand dunes with a lake between them, green plants along the shore and snow on the right dune](docs/screenshots/sand.jpg)](docs/screenshots/sand.jpg) | [![Fine art mode: a diagonal scatter of fine black ink marks with a few red ones](docs/screenshots/fine.jpg)](docs/screenshots/fine.jpg) |
+| Ink keeps bleeding on its own, and the AI companion adds a stroke now and then | Pick from 9 materials and pour; sand settles, water pools, seeds sprout | The AI steps aside; finer brush, far less spread, lines stay put |
+
+All three are real sessions in the app — no mockups.
+
 ## How it works
 
 - **Ink mode**: you paint on the paper and the ink keeps bleeding on its own. A quiet "dumb AI" companion occasionally adds a stroke of its own — but the moment you touch the canvas it steps aside, and its next stroke avoids where you just painted. Your brush always wins.

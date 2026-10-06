@@ -2,7 +2,7 @@
 
 A **fully offline, account-free, privacy-first** sandbox for unwinding. One canvas, two materials — switch with the 墨/沙 (Ink/Sand) toggle at the bottom; switching changes the brush and the physics, not the program:
 
-- **Ink mode (Ink Quiet, Mode B)** — drop ink on rice paper and watch it bleed and flow.
+- **Ink mode (Ink Quiet, Mode B)** — drop ink on water-like surface and watch it expand.
 - **Sand mode (Mode A)** — a falling-sand particle sandbox with 9 materials.
 - **Fine art mode** — a third position on the mode switch, for when you have
   something of your own to make: the AI steps aside completely, the brush gets
@@ -22,7 +22,7 @@ There is no backend, no account, no tracking, and no network access at all.
 | [![Ink mode: blue and red ink bleeding across rice paper while the AI companion paints](docs/screenshots/ink.jpg)](docs/screenshots/ink.jpg) | [![Sand mode: two sand dunes with a lake between them, green plants along the shore and snow on the right dune](docs/screenshots/sand.jpg)](docs/screenshots/sand.jpg) | [![Fine art mode: a diagonal scatter of fine black ink marks with a few red ones](docs/screenshots/fine.jpg)](docs/screenshots/fine.jpg) |
 | Ink keeps bleeding on its own, and the AI companion adds a stroke now and then | Pick from 9 materials and pour; sand settles, water pools, seeds sprout | The AI steps aside; finer brush, far less spread, lines stay put |
 
-All three are real sessions in the app — no mockups.
+All three are screenshots directly from the website, not made-up ones.
 
 ## How it works
 

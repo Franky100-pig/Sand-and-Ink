@@ -52,7 +52,7 @@ auto-update, no data stored.
 If your browser restricts `file://`, serve the folder locally (still offline):
 
 ```bash
-cd ink-healing
+# clone 后仓库根目录就是应用本体，直接起服务即可
 python3 -m http.server 8080
 # open http://localhost:8080
 ```
@@ -182,9 +182,11 @@ textures/models, so that code path is never triggered.
 
 ## Credits & license
 
-- Ink engine `lib/suminagashi.js`: adapted from **fisheryv/healing** (MIT, © 2026 Fisher).
-  The original is a "phone face-down, music-driven focus app"; this tool reuses its rendering
-  core behind an "active + interruptible + offline" interaction. See `NOTICE.md`.
+- Ink engine `lib/suminagashi.js`: adapted from a third-party MIT-licensed engine
+  (© 2026 Fisher). Only the rendering core is reused — the interaction model here is
+  entirely different: active and interruptible rather than hands-off, and fully offline
+  rather than account-based. Copyright notice and licence text travel with the file
+  itself; see [`NOTICE.md`](NOTICE.md).
 - `lib/three.min.js`: three.js r137 (MIT).
 - Sand engine `lib/sandsim.js`: **original implementation in this repo** (© 2026 Franky100-pig, MIT).
   Only the *ideas* of MIT-licensed projects (neon-sand, SandGears) were referenced; no code was copied.

@@ -6,7 +6,7 @@
  * ⚠️ 维护约定：只要改了下面 ASSETS 里任何一个文件的内容或清单，
  *    必须同时把 CACHE 的版本号 +1。原因见下面 install / fetch 的注释。
  */
-const CACHE = 'ink-quiet-v3'
+const CACHE = 'ink-quiet-v4'
 const ASSETS = [
   'index.html',
   'styles.css',

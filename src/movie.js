@@ -5,8 +5,13 @@
  *   - 纯前端、零网络、零文件依赖——画面来自页面里的两块画布，编码用浏览器内置
  *     MediaRecorder + captureStream，没有任何上传或外部库。
  *   - “约 15 秒”是硬约束：无论用户实际画了 5 秒还是 5 分钟，导出都固定 ≈15s。
- *     做法：录制时以 ~10fps 把合成画面存成 JPEG 帧；导出时把 N 帧按索引映射到
- *     450 个输出帧（30fps × 15s），于是长过程被压缩、短过程被放慢。
+ *     做法：录制时把合成画面存成 JPEG 帧；导出时把 N 帧按索引映射到 450 个输出帧
+ *     （30fps × 15s），于是长过程被压缩、短过程被放慢。
+ *   - 采样从满 30fps 起步：源帧数 ≥ 输出帧数（450）时，每张输出帧都拿到不同的源帧，
+ *     画面顺滑。缓冲到上限就抽稀一半并把间隔翻倍，于是内存严格有界、录制时长不受限，
+ *     代价只是「近处密、远处疏」的延时摄影节奏。
+ *     固定低采样率会让每帧被重复播放多次，成片看起来「一帧一帧」。
+ *   - 输出帧用 requestFrame() 精确产出，不靠 30fps 采样器轮询，避免重复/漏帧。
  *   - 不评分、不裁剪、不失败：录太短只是温和提示，不会报错崩溃。
  */
 (function () {
@@ -15,9 +20,26 @@
   var OUT_FPS = 30            // 导出帧率
   var TARGET_SEC = 15         // 目标时长（秒）
   var TOTAL_FRAMES = OUT_FPS * TARGET_SEC   // 450 个输出帧
-  var CAPTURE_FPS = 10        // 录制采样率
-  var MAX_FRAMES = 1500       // 帧上限（≈2.5 分钟），超出不再追加，避免内存膨胀
+  var FRAME_BUDGET = 1200     // 帧缓冲上限（≈40 秒 @30fps；JPEG 约 50MB）
+  // 起始采样间隔 = 30fps。特意减 1ms：rAF 步长约 16.67ms，两个步长正好是 33.33ms，
+  // 卡在阈值上会因浮点误差时常判不过，实际掉到 ~25fps。留 1ms 余量可稳定拿到 30fps。
+  var MIN_INTERVAL = 1000 / OUT_FPS - 1
   var LONGEST = 720           // 导出最长边（像素），缩小以加快编码、压低体积
+
+  function nowMs() {
+    return (typeof performance !== 'undefined' ? performance.now() : Date.now())
+  }
+
+  // 抽稀：保留偶数帧（时间上均匀）+ 最新一帧，长度约减半。
+  // 最新帧必须留 —— 否则抽稀会把刚画完的状态丢掉。
+  function thinFrames(frames) {
+    var n = frames.length
+    if (n <= 2) return frames.slice()
+    var kept = []
+    for (var i = 0; i < n; i += 2) kept.push(frames[i])
+    if (kept[kept.length - 1] !== frames[n - 1]) kept.push(frames[n - 1])
+    return kept
+  }
 
   function supported() {
     return (typeof MediaRecorder !== 'undefined') &&
@@ -85,6 +107,17 @@
     // 格式候选顺序（测试用）：MP4 必须排在 WebM 前面
     _candidates: MIME_CANDS,
     _pickMime: pickMime,
+    // 抽稀 / 帧预算（测试用）
+    _thinFrames: thinFrames,
+    _frameBudget: FRAME_BUDGET,
+    _minInterval: MIN_INTERVAL,
+
+    // 缓冲满了就抽稀一半，并把采样间隔翻倍：内存严格有界，录制时长不受限。
+    // 副产物是「近处密、远处疏」—— 开头快速掠过、收尾更接近真实速度，正合适。
+    _thin: function () {
+      this._frames = thinFrames(this._frames)
+      this._interval *= 2
+    },
 
     // 把源帧索引映射到 450 个输出帧（最近邻）。N<=1 时恒为 0。供测试与编码共用。
     _mapIndex: function (i, n) {
@@ -97,17 +130,20 @@
       this._rec = true
       this._frames = []
       this._lastCap = 0
+      this._t0 = nowMs()
+      this._pending = false
+      this._interval = MIN_INTERVAL
       this._grab = grab
       return { ok: true }
     },
 
-    // 由主循环每帧调用；内部节流到 ~10fps，并把合成画面存成 JPEG Blob。
+    // 由主循环每帧调用；按 _interval 节流（满 30fps 起步，缓冲满后逐次减半），
+    // 把合成画面存成 JPEG Blob。
     capture: function (src) {
-      if (!this._rec || !src) return
-      var now = (typeof performance !== 'undefined' ? performance.now() : Date.now())
-      if (now - this._lastCap < 1000 / CAPTURE_FPS) return
+      if (!this._rec || !src || this._pending) return
+      var now = nowMs()
+      if (now - this._lastCap < this._interval) return
       this._lastCap = now
-      if (this._frames.length >= MAX_FRAMES) return
       var w = src.width || 800, h = src.height || 600
       var scale = Math.min(1, LONGEST / Math.max(w, h))
       var cw = Math.max(2, Math.round(w * scale))
@@ -120,8 +156,15 @@
       this._capCv.height = ch
       try { this._capCtx.drawImage(src, 0, 0, cw, ch) } catch (e) { return }
       var self = this
-      // toBlob 异步；录制期间很快完成，停止时窗口足够短
-      this._capCv.toBlob(function (b) { if (b) self._frames.push(b) }, 'image/jpeg', 0.7)
+      // toBlob 异步。同一时刻只允许一个在途，保证 push 顺序与抓取顺序一致
+      // （否则高采样率下回调可能乱序，成片会跳针）。
+      this._pending = true
+      this._capCv.toBlob(function (b) {
+        self._pending = false
+        if (!b) return
+        self._frames.push(b)
+        if (self._frames.length >= FRAME_BUDGET) self._thin()
+      }, 'image/jpeg', 0.7)
     },
 
     stop: function () {
@@ -146,7 +189,15 @@
       out.height = h
       var octx = out.getContext('2d')
       var stream
-      try { stream = out.captureStream(OUT_FPS) } catch (e) { return Promise.resolve({ ok: false, reason: 'capturestream', err: String(e) }) }
+      try { stream = out.captureStream(0) } catch (e) { return Promise.resolve({ ok: false, reason: 'capturestream', err: String(e) }) }
+      // captureStream(0) = 只有 requestFrame() 时才产出一帧 —— 每张画上去的画面都精确变成一帧视频，
+      // 不会被 30fps 采样器重复或漏掉（编码耗时抖动会让它重复采样同一帧，是画面「顿」的第二个来源）。
+      // 不支持 requestFrame 的浏览器退回按帧率自动采样。
+      var track = stream.getVideoTracks && stream.getVideoTracks()[0]
+      var manual = !!(track && typeof track.requestFrame === 'function')
+      if (!manual) {
+        try { stream = out.captureStream(OUT_FPS) } catch (e) { return Promise.resolve({ ok: false, reason: 'capturestream', err: String(e) }) }
+      }
       // 优先 MP4，构造失败自动退到下一个候选（见 MIME_CANDS）
       var picked = chooseRecorder(stream)
       if (!picked) return Promise.resolve({ ok: false, reason: 'mediarecorder' })
@@ -189,8 +240,11 @@
           chain = chain.then(function () {
             var si = Movie._mapIndex(ii, n)
             return getB(si).then(function (bm) {
+              var t0 = nowMs()
               octx.drawImage(bm, 0, 0, w, h)
-              return sleep(frameMs)
+              if (manual) { try { track.requestFrame() } catch (e) {} }
+              // 扣掉解码 / 绘制耗时，让 450 帧真的落在 ≈15 秒上
+              return sleep(Math.max(0, frameMs - (nowMs() - t0)))
             })
           })
         })(i)

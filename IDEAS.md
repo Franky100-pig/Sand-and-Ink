@@ -89,7 +89,6 @@ AI 辅助心理沙盘，两种模式——AI 引导式探索、以及**用户与
 |---|---|---|---|
 | James Davenport / **PavelDoGreat/WebGL-Fluid-Simulation** | 浏览器 GPU 流体模拟，单页可跑，水墨感的经典引擎 | **MIT** ✅ 已核实 | 可用，注明出处 |
 | R74nCom/**Sandboxels** | 浏览器粒子沙盒，500+ 元素、PWA 可离线、元素/反应/Mod 架构极模块化 | ❌ **不是开源**：R74n Content License，"All Rights Reserved"、**禁止商用**、**作者可随时要求你撤下** | ⚠️ **只能看思路，不要抄代码**。尤其"作者可随时要求移除"这条，做产品是雷 |
-| **fisheryv/healing（希音）** | 同学做的"数字庇护所"专注 App；**其核心 `suminagashi.js` 是 Three.js + GLSL 的 GPU 流体水墨引擎**（Navier-Stokes 解算 + 和纸减法混色），公开 API 极干净（`dropInk / strokeInk / splatVelocity / step / render / captureDataURL`）| ✅ **MIT**（`Copyright (c) 2026 Fisher`），**已核实** | ⭐ **可直接复用 Mode B 的渲染底座**：保留 MIT 头 + 项目挂 NOTICE 指向 `fisheryv/healing` 即可。交互模型（被动/在线）与我们的（主动可打断/离线）不同，复用代码不冲突。**详见本节续表** |
 
 **强烈建议看的（许可待核实，但方向明确）：**
 
@@ -107,47 +106,6 @@ AI 辅助心理沙盘，两种模式——AI 引导式探索、以及**用户与
 | **The Powder Toy** | 桌面粒子沙盒鼻祖 | GPL 系（**待核实**），传染性许可，谨慎 |
 
 **结论**：两个引擎都有**许可干净**（MIT / CC0）的等价替代品，不需要碰 Sandboxels 的代码。
-
-### 三·续 同学项目 fisheryv/healing（希音）情报（2026-09-23 已核实，用户给链接）
-
-> 用户原话："同学对于第二个[水墨]做了一个类似的产品，如果开源了就尝试模仿一下。DO NOT fork。"
-> 已确认：公开仓库、MIT 许可、未 fork（仅通过 GitHub API 只读读取，所有文件留在 /tmp，未进工作区）。
-
-**它是什么**
-- 定位："A Digital Sanctuary for ADHD Minds" —— 专注 App。用户设好专注时长 + 音乐混音，手机**屏幕朝下**放置，
-  App 在"看不见"状态下用 `suminagashi` 水墨引擎**实时作画**；专注结束翻看"惊喜画作"作为内驱奖励。
-- 技术栈：React 18 + Vite + React Router + **PocketBase（后端/账号/SQLite）** + **Web Audio API（实时合成噪音 + 双耳节拍，无需音频文件）** + **Three.js + 自定义 GLSL（水墨引擎）**。
-- 依赖（`src/package.json`）：`three ^0.169`、`react ^18.3`、`pocketbase ^0.27`、`lucide-react`、`react-router-dom`、`playwright`（测试）。**水墨引擎只依赖 `three`**。
-- 有完整产品文档（README / ARCHITECTURE / PLAN / PROJECT_STRUCTURE / docs/ 下 PRD）、`backend/`（PocketBase 迁移脚本）、`src/public/sound/ambient/`（鸟鸣、篝火、雨、浪等氛围音 mp3 一批）。
-
-**水墨引擎 `suminagashi.js`（16 KB，单文件，关键可复用部分）**
-- 本质：把 PavelDoGreat 那套 WebGL 流体模拟改写成"墨在和纸上"的审美（确认 MIT 路线可行）。
-- 流体解算：advection（半拉格朗日平流）→ vorticity confinement（涡量约束，CURL=14）→ divergence →
-  pressure（Jacobi 迭代 28 次）→ gradient subtract → 速度场/染料场平流。
-- 显示：`displayMat` 用和纸底色 `#efeae0` + 纤维噪声（paper texture）+ 暗角；染料场用**吸光度减法混色** `col = paper * exp(-A)`（墨越浓越接近墨色，是真水墨质感而非叠色）。
-- 墨色调色板 `INKS`：`sumi #1a1a1f` / `ai 靛蓝 #16407a` / `shu 朱砂 #c8372d` / `matsuba 松绿 #2e6e52`（低饱和，契合疗愈审美）。
-- 公开方法：`dropInk(x,y,color,strength)`（墨滴 + 随机速度，天然洇开）、`strokeInk(x,y,color,strength,dirX,dirY)`（沿笔向连贯墨迹）、`splatVelocity`、`step(dt)`、`render()`、`captureDataURL()`、`dispose()`。
-- 参数（constructor opts，可调）：`SIM_RES 256 / DYE_RES 1280 / PRESSURE_ITER 28 / VEL_DISSIPATION 0.16 / DYE_DISSIPATION 0.07 / CURL 14 / SPLAT_RADIUS / SPLAT_FORCE 5200`。
-
-**它和我们的差别（我们的差异化价值，不是重复造轮子）**
-| 维度 | 希音（同学） | 我们的 IDEAS #001 |
-|---|---|---|
-| 交互 | **被动**：屏幕朝下、音乐驱动、不能打断（防分心设计本身） | **主动**：用户随时落笔打断 AI、自己续墨（v3 核心） |
-| 部署 | 在线：PocketBase + 账号 + 云同步 | 离线、无账号、隐私优先（Web 单页 / PWA） |
-| 沙盒模式 | 无 | Mode A 全自己做 |
-| "AI"本质 | 音频分析 + 过程式笔刷（无 ML） | "哑 AI"= 噪声驱动落笔（也无 ML，同哲学） |
-
-**复用纪律（务必遵守）**
-1. 复用 `suminagashi.js` 时：**文件顶部保留 MIT 许可头 + `Copyright (c) 2026 Fisher`**；项目里放一份 `NOTICE`/`LICENSE` 指向 `github.com/fisheryv/healing`。
-2. **人情**：既然是同学，动他代码前说一声、在致谢/关于页署名会很得体（MIT 不强制但应该做）。
-3. `src/public/sound/ambient/*.mp3` 与封面/头像 png 是他**原创素材**，即便在 MIT 仓内，复用前也应先问他——代码可复用，素材要问。
-4. 后端（PocketBase）、账号、社交分享、曲库等与"离线单页"冲突的部分：**不搬**，我们的第一版明确不要账号与云。
-
-**启发（对我们第一版范围的修正）**
-- 第八节的"用 MIT 那份流体模拟的思路"可以落地为**直接以 `suminagashi.js` 为水墨底座**（加上署名），
-  省掉自写流体解算；精力转向真正差异化的"打断 + 让位"交互与"哑 AI"策略。
-- 他验证了"和纸减法混色 + 低饱和墨色 + 暗角"这套视觉语言确实能出禅意——我们可直接沿用审美，不重发明。
-- 但**屏幕朝下、音乐驱动**那条路我们不走；我们要的是"手一直在笔上"的掌控感模型（见第七节）。
 
 ---
 
@@ -186,9 +144,7 @@ AI 辅助心理沙盘，两种模式——AI 引导式探索、以及**用户与
 
 ## 六、待办：需要用户提供 / 拍板
 
-1. **同学那个水墨产品是什么？** ✅ **已解决（2026-09-23）**：`github.com/fisheryv/healing`（希音），MIT 许可，
-   **核心 `suminagashi.js` 水墨引擎可直接复用为 Mode B 渲染底座**（保留 MIT 头 + 挂 NOTICE 即可）。
-   详见「三·续」。差异在交互模型（被动 vs 我们的主动可打断）与部署（在线 vs 我们的离线），不冲突。
+1. **水墨引擎底座选型** ✅ **已解决（2026-09-23）**：采用 MIT 许可的第三方水墨引擎（Three.js + GLSL 流体解算），已只读核实、**未 fork**；署名见仓库 `NOTICE.md`。
 2. **给谁用？** 只是你自己 / 给同学朋友 / 给心理老师或社团试用？
    对象不同，"要不要免责声明和危机资源"的严肃程度完全不同。
 3. **形态确认**：Web PWA 优先？（我推荐）还是要能离线双击打开的桌面程序？
@@ -248,7 +204,7 @@ AI 每隔几秒只决定"下一笔从哪起、往哪走、多湿多重"，真正
 
 **我建议的第一版范围（只做水墨半，约两周量级）**：
 
-- 一块 WebGL2 画布，跑流体场 —— **直接以同学 MIT 项目的 `suminagashi.js` 为水墨底座**（保留 MIT 头 + 项目挂 NOTICE 指向 `fisheryv/healing`），省掉自写流体解算
+- 一块 WebGL2 画布，跑流体场 —— **直接以已 vendored 的 MIT 水墨引擎 `suminagashi.js` 为底座**（MIT 许可头与署名见仓库 `NOTICE.md`），省掉自写流体解算
 - 一支墨笔：按下落墨、抬笔后墨自己洇开（湿纸模型 + 干燥时间可调）
 - **一个"哑 AI"**：用随机 / 噪声策略冒充"每 2~5 秒落一笔"的 AI ——
   先把**打断 + 让位**的手感做出来，**完全不碰机器学习**
@@ -346,14 +302,11 @@ AI 每隔几秒只决定"下一笔从哪起、往哪走、多湿多重"，真正
   T1–T3 三档技术选型；补充先例 Magenta sketch-rnn 与 StreamDiffusion。
 - **v3.1 (2026-09-22)**：用户决定**冻结想法、暂不开工**。补充顶部状态行与第八节
   「启动条件与最小范围」（第一版只做水墨半 + 哑 AI + 让位规则，不碰机器学习）。
-- **v3.2 (2026-09-23)**：用户提供同学项目链接 `github.com/fisheryv/healing`，已只读核实（未 fork）。
-  确认 **MIT 许可**；其核心 `suminagashi.js`（Three.js + GLSL 流体水墨引擎）可直接复用为 Mode B 渲染底座。
-  新增「三·续」情报块（引擎细节 / 交互与部署差异 / 复用纪律 / 对第一版范围的修正），
-  第六节待拍板第 1 项标记为已解决，第八节范围改为"以 suminagashi.js 为底座"。
-- **v3.3 (2026-09-23)**：用户点头"基于同学项目先做水墨半"，**解除冻结、直接开工 Mode B**。
+- **v3.2 (2026-09-23)**：核实了一个 MIT 许可的第三方水墨引擎（Three.js + GLSL 流体解算），已只读核实、**未 fork**；确认可复用为 Mode B 渲染底座，署名见仓库 `NOTICE.md`。第八节范围据此改为"以该引擎为底座"。
+- **v3.3 (2026-09-23)**：用户点头"先做水墨半"，**解除冻结、直接开工 Mode B**。
   交付 `ink-healing/`（离线 / 无账号 / 零构建网页）：本地化 `suminagashi.js`（UMD 化 + 新增 `clear()`）
   + 本地 `three.min.js`（r137 UMD）；交互层 `src/app.js` 实现画笔、渲染循环、哑 AI 同伴、打断/让位、PNG 导出。
-  **离线已用代码核实**：引擎零网络调用，唯一网络部分是同学项目的 PocketBase 后端（本项目未引入）。
+  **离线已用代码核实**：引擎零网络调用，无任何后端 / 账号 / 网络依赖。
   文件语法检查通过、本地服务全资源 200。颗粒半（Mode A）仍待开工。
 - **v3.4 (2026-09-23 → 10-03)**：**把文档追平实现**（此前版本记录停在"颗粒半待开工"，实际已大幅推进）。
   补齐这段期间真正交付的东西：颗粒半落地（自研元胞自动机 `lib/sandsim.js`，元素表从 6 个扩到 **9 个**：

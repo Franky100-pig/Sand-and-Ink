@@ -1,6 +1,6 @@
 /* 墨息 · Ink Quiet — 离线沙盒疗愈（水墨半）
  *
- * 渲染底座：window.Suminagashi（改编自 fisheryv/healing，MIT）。
+ * 渲染底座：window.Suminagashi（第三方 MIT 引擎改编版，版权声明见 lib/suminagashi.js 文件头部）。
  * 本文件负责“交互”——也就是 IDEAS.md 里反复说的那件事：
  *   AI 在画，但笔权永远在用户手里；用户落笔，AI 立刻让位。
  *

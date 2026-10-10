@@ -196,3 +196,27 @@ textures/models, so that code path is never triggered.
 
 - The AI's ink **physically retreats** when the user paints (inject reverse velocity, not just "no new strokes").
 - Upgrade the dumb AI to a sketch-RNN-style stroke-sequence model (still optional, still offline).
+
+## If you're struggling / 如果你正很难受
+
+> 这是一个玩具，不是治疗，它不能替代专业帮助。如果你或身边的人正处于危机中，请主动求助——和受过训练的人聊聊，往往比想象中更有用。下面的热线都是免费且保密的。
+>
+> If you or someone you know is in crisis, please reach out. This is a toy, not therapy, and it cannot replace professional help. The lines below are free and confidential. **If there is immediate danger to life, call your local emergency number first.**
+
+| Region / 地区 | Hotline / 热线 | Hours / 服务时间 |
+| :-- | :-- | :-- |
+| 中国大陆 | 全国心理援助热线 **12356**；北京心理危机研究与干预中心 **010-82951332**（手机）/ **800-810-1117**（座机）；希望24热线 **400-161-9995** | 24 小时 |
+| 中国香港 | 香港撒瑪利亞防止自殺會 **2389 2222**；撒瑪利亞會 **2896 0000**；生命熱線 **2382 0000**；東華三院芷若園 **18281**；情緒通 **18111** | 24 小时 |
+| 中国台湾 | 安心專線 **1925**；生命線 **1995**；張老師 **1980** | 24 小时（1980 周一至周六） |
+| 中国澳门 | 社會工作局輔導熱線 **2826 1126**；明愛生命熱線 **2852 5222**；心晴熱線 **2871 2356** | 24 小时 |
+| United States | **988** Suicide & Crisis Lifeline（call or text） | 24/7 |
+| United Kingdom | Samaritans **116 123** | 24/7 |
+| Canada | **988**（call or text） | 24/7 |
+| Australia | Lifeline **13 11 14** | 24/7 |
+| Japan | よりそいホットライン **0120-279-338**；#いのちSOS **0120-061-338** | 24 小时 |
+| Germany | TelefonSeelsorge **0800 111 0 111** / **0800 111 0 222** / **116 123** | 24/7 |
+| France | **3114**（prévention du suicide） | 24/7 |
+
+Numbers were verified in October 2026 from each service's official source.
+Hotlines change, so treat this as a starting point and look up the current line
+for your area if a number doesn't connect.

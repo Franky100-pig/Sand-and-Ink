@@ -2,7 +2,7 @@
 
 A **fully offline, account-free, privacy-first** sandbox for unwinding. One canvas, two materials — switch with the 墨/沙 (Ink/Sand) toggle at the bottom; switching changes the brush and the physics, not the program:
 
-- **Ink mode (Ink Quiet, Mode B)** — drop ink on rice paper and watch it bleed and flow.
+- **Ink mode (Ink Quiet, Mode B)** — drop ink on water-like surface and watch it expand.
 - **Sand mode (Mode A)** — a falling-sand particle sandbox with 9 materials.
 - **Fine art mode** — a third position on the mode switch, for when you have
   something of your own to make: the AI steps aside completely, the brush gets
@@ -14,6 +14,15 @@ A **fully offline, account-free, privacy-first** sandbox for unwinding. One canv
 Both halves are **sandbox games for decompressing** — no scores, no levels, no way to fail. Everything runs **100% offline** in your browser. This project was made in the hope that it might help someone who is feeling down: pour some sand, light a fire, grow a plant, watch the rain come back around.
 
 There is no backend, no account, no tracking, and no network access at all.
+
+## Screenshots
+
+| Ink | Sand | Fine art |
+| :--: | :--: | :--: |
+| [![Ink mode: blue and red ink bleeding across rice paper while the AI companion paints](docs/screenshots/ink.jpg)](docs/screenshots/ink.jpg) | [![Sand mode: two sand dunes with a lake between them, green plants along the shore and snow on the right dune](docs/screenshots/sand.jpg)](docs/screenshots/sand.jpg) | [![Fine art mode: a diagonal scatter of fine black ink marks with a few red ones](docs/screenshots/fine.jpg)](docs/screenshots/fine.jpg) |
+| Ink keeps bleeding on its own, and the AI companion adds a stroke now and then | Pick from 9 materials and pour; sand settles, water pools, seeds sprout | The AI steps aside; finer brush, far less spread, lines stay put |
+
+All three are screenshots directly from the website, not made-up ones.
 
 ## How it works
 
@@ -34,10 +43,16 @@ auto-update, no data stored.
 
 **In the browser:** just double-click `index.html`. Every asset (engines, three.js, UI) is local — zero network requests, no backend, no account.
 
+**Installable (PWA):** on a phone or desktop browser use "Add to Home Screen" / "Install". It then opens full-screen and keeps working offline — a service worker caches the local files (no account, no server).
+
+> **Maintaining the service worker:** whenever you change the contents of any file listed in `ASSETS`, bump `CACHE` in `sw.js` (e.g. `ink-quiet-v3` → `v4`). The page itself is network-first, so a *stale* worker can otherwise pair a fresh `index.html` with an old `src/app.js` — the UI then shows a button whose JS handler doesn't exist yet, and clicking it silently does nothing. Static assets use stale-while-revalidate as a second line of defence, and `install` fetches with `cache: 'reload'` so it can never pre-cache an HTTP-cached stale copy — but bumping the version is what clears the old cache immediately.
+>
+> **If a deployed update seems not to appear:** a browser that already has the site open keeps running the JS it loaded — reload the page. To be sure whether it's the server or your cache, open the site in a **private/incognito window** (no service worker, no cache): if it works there, the deploy is fine and it's your browser's cache. To force a clean slate: DevTools → Application → Service Workers → **Unregister**, then reload. Sites opened before a failed update can be one generation behind; a fresh visitor is never affected.
+
 If your browser restricts `file://`, serve the folder locally (still offline):
 
 ```bash
-cd ink-healing
+# clone 后仓库根目录就是应用本体，直接起服务即可
 python3 -m http.server 8080
 # open http://localhost:8080
 ```
@@ -103,11 +118,22 @@ textures/models, so that code path is never triggered.
   (dye dissipation is near zero: ~12% after ten minutes idle), but it still bleeds naturally.
 - **AI companion**: on/off. When on, it paints a stroke whenever you've been quiet for a bit; it steps away the moment you draw.
 - **AI patience**: how long it waits between strokes (higher = slower, less intrusive).
+- **Soundscape** (声音 / Sound): a quiet ambience you can turn on — it cycles **off → rain (雨) → tide (潮)**. It is *synthesized live in your browser* (filtered noise + a slow swell), not an audio file, so it stays 100% offline with nothing to download and no licensing to worry about. A small **volume** slider appears only while sound is on. Default off.
 - **Clear**: empties the paper; ink starts fresh from blank.
 - **Save**: exports the current frame as PNG (via `toBlob`, robust on `file://` and Safari).
   Note: **the WorkBuddy preview iframe blocks downloads** — open `index.html` in a real browser
   and click Save there; the file goes to your downloads folder. The button flashes
   "已保存 ✓" (saved) as feedback.
+- **Save Movie** (录制 / Record): records your *process*, not just the final frame, and exports a
+  short clip (~15s). Click **录制** to start, create, then click **停止** to finish — the recording
+  is re-timed to ≈15 seconds regardless of how long you actually drew (a long session is compressed,
+  a short one is slowed down). It is encoded entirely in the browser with `MediaRecorder` +
+  `captureStream`. It exports **MP4 (H.264) by default** — the most widely playable format, so a clip
+  drops straight into Photos / WeChat / any editor — and automatically falls back to WebM/VP9 on
+  browsers that cannot record MP4 (Firefox). Fully offline, no upload, no files.
+  Note: like Save, the download is blocked inside the WorkBuddy preview; open `index.html` in a
+  real browser to get the file. If your browser can't encode video, the button reports "不支持"
+  (No video) instead of failing.
 
 ### Sand mode (toggle to 「沙」)
 
@@ -156,9 +182,11 @@ textures/models, so that code path is never triggered.
 
 ## Credits & license
 
-- Ink engine `lib/suminagashi.js`: adapted from **fisheryv/healing** (MIT, © 2026 Fisher).
-  The original is a "phone face-down, music-driven focus app"; this tool reuses its rendering
-  core behind an "active + interruptible + offline" interaction. See `NOTICE.md`.
+- Ink engine `lib/suminagashi.js`: adapted from a third-party MIT-licensed engine
+  (© 2026 Fisher). Only the rendering core is reused — the interaction model here is
+  entirely different: active and interruptible rather than hands-off, and fully offline
+  rather than account-based. Copyright notice and licence text travel with the file
+  itself; see [`NOTICE.md`](NOTICE.md).
 - `lib/three.min.js`: three.js r137 (MIT).
 - Sand engine `lib/sandsim.js`: **original implementation in this repo** (© 2026 Franky100-pig, MIT).
   Only the *ideas* of MIT-licensed projects (neon-sand, SandGears) were referenced; no code was copied.
@@ -167,5 +195,28 @@ textures/models, so that code path is never triggered.
 ## Ideas for later
 
 - The AI's ink **physically retreats** when the user paints (inject reverse velocity, not just "no new strokes").
-- Service worker → a truly installable PWA.
 - Upgrade the dumb AI to a sketch-RNN-style stroke-sequence model (still optional, still offline).
+
+## If you're struggling / 如果你正很难受
+
+> 这是一个玩具，不是治疗，它不能替代专业帮助。如果你或身边的人正处于危机中，请主动求助——和受过训练的人聊聊，往往比想象中更有用。下面的热线都是免费且保密的。
+>
+> If you or someone you know is in crisis, please reach out. This is a toy, not therapy, and it cannot replace professional help. The lines below are free and confidential. **If there is immediate danger to life, call your local emergency number first.**
+
+| Region / 地区 | Hotline / 热线 | Hours / 服务时间 |
+| :-- | :-- | :-- |
+| 中国大陆 | 全国心理援助热线 **12356**；北京心理危机研究与干预中心 **010-82951332**（手机）/ **800-810-1117**（座机）；希望24热线 **400-161-9995** | 24 小时 |
+| 中国香港 | 香港撒瑪利亞防止自殺會 **2389 2222**；撒瑪利亞會 **2896 0000**；生命熱線 **2382 0000**；東華三院芷若園 **18281**；情緒通 **18111** | 24 小时 |
+| 中国台湾 | 安心專線 **1925**；生命線 **1995**；張老師 **1980** | 24 小时（1980 周一至周六） |
+| 中国澳门 | 社會工作局輔導熱線 **2826 1126**；明愛生命熱線 **2852 5222**；心晴熱線 **2871 2356** | 24 小时 |
+| United States | **988** Suicide & Crisis Lifeline（call or text） | 24/7 |
+| United Kingdom | Samaritans **116 123** | 24/7 |
+| Canada | **988**（call or text） | 24/7 |
+| Australia | Lifeline **13 11 14** | 24/7 |
+| Japan | よりそいホットライン **0120-279-338**；#いのちSOS **0120-061-338** | 24 小时 |
+| Germany | TelefonSeelsorge **0800 111 0 111** / **0800 111 0 222** / **116 123** | 24/7 |
+| France | **3114**（prévention du suicide） | 24/7 |
+
+Numbers were verified in October 2026 from each service's official source.
+Hotlines change, so treat this as a starting point and look up the current line
+for your area if a number doesn't connect.

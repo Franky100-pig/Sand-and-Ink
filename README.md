@@ -1,19 +1,23 @@
 # Sand-and-Ink
 
-A **fully offline, account-free, privacy-first** sandbox for unwinding. One canvas, two materials — switch with the 墨/沙 (Ink/Sand) toggle at the bottom; switching changes the brush and the physics, not the program:
+A **fully offline, account-free, privacy-first** sandbox for unwinding. One canvas, two materials — switch with the 墨/沙 (Ink/Sand) toggle. No scores, no levels, no way to fail; everything runs 100% offline in your browser.
 
-- **Ink mode (Ink Quiet, Mode B)** — drop ink on water-like surface and watch it expand.
-- **Sand mode (Mode A)** — a falling-sand particle sandbox with 9 materials.
-- **Fine art mode** — a third position on the mode switch, for when you have
-  something of your own to make: the AI steps aside completely, the brush gets
-  much finer (smaller ink dots), and the ink spreads far less, so lines stay
-  where you put them. Switching back restores your previous AI setting.
-  What you painted in ink mode stays on the paper when you switch; press
-  **Clear** first if you want to start a fresh piece.
+## Contents
+- [Modes](#modes)
+- [Screenshots](#screenshots)
+- [How it works](#how-it-works)
+- [Run it](#run-it)
+- [Verify it](#verify-it)
+- [Controls](#controls)
+- [Design principles](#design-principles)
+- [Credits & license](#credits--license)
+- [Ideas for later](#ideas-for-later)
+- [If you're struggling](#if-youre-struggling)
 
-Both halves are **sandbox games for decompressing** — no scores, no levels, no way to fail. Everything runs **100% offline** in your browser. This project was made in the hope that it might help someone who is feeling down: pour some sand, light a fire, grow a plant, watch the rain come back around.
-
-There is no backend, no account, no tracking, and no network access at all.
+## Modes
+- **Ink (Mode B)** — drop ink on water and watch it bleed.
+- **Sand (Mode A)** — a falling-sand sandbox with 9 materials.
+- **Fine art** — the AI steps aside completely; a finer brush and far less spread, so lines stay where you put them. What you painted in ink stays on the paper when you switch; press **Clear** for a fresh piece.
 
 ## Screenshots
 

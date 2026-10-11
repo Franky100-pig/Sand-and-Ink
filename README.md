@@ -36,7 +36,7 @@ All three are screenshots directly from the website, not made-up ones.
 > This is the first minimal slice of IDEAS.md #001 ("offline sandbox healing tool"):
 > ink fluid + dumb AI + interrupt/yield rules. **No machine learning involved.**
 
-## Run it (fully offline)
+## Run it
 
 **Desktop**: download the installer from [Releases](https://github.com/Franky100-pig/Sand-and-Ink/releases) — `.dmg` for macOS (Apple Silicon & Intel), `.exe` for Windows. Same offline sandbox in a small Electron shell.
 
@@ -74,32 +74,24 @@ Open `selftest.html` — two groups of checks (Ink 8, Sand 22) show PASS/FAIL. A
 - **AI**: same yield rules; holds back when the box is >~35% full.
 - **Concentration** slider hides in sand mode.
 
-## Design discipline (from IDEAS.md v3)
+## Design principles
 
-- No scores, no levels, no failure states. The sand half contains fire/bombs as *physics*,
-  but nothing is ever judged as "win/lose".
-- The AI only produces *intent* (where to drop, how wet); the actual stroke belongs to the physics.
-- The AI's ink expresses no emotion; it only responds to rhythm, never interrupting or overpainting yours.
-- No psychological assessment, no "your drawing means X" interpretation. This is a toy, not therapy.
+- No scores/levels/failure. Fire/bombs are *physics*, never "win/lose".
+- AI produces only *intent* (where to drop, how wet); the stroke belongs to the physics.
+- No psychological assessment or "your drawing means X". This is a toy, not therapy.
 
 ## Credits & license
 
-- Ink engine `lib/suminagashi.js`: adapted from a third-party MIT-licensed engine
-  (© 2026 Fisher). Only the rendering core is reused — the interaction model here is
-  entirely different: active and interruptible rather than hands-off, and fully offline
-  rather than account-based. Copyright notice and licence text travel with the file
-  itself; see [`NOTICE.md`](NOTICE.md).
+- `lib/suminagashi.js`: adapted from a third-party MIT engine (© 2026 Fisher). See [NOTICE.md](NOTICE.md).
 - `lib/three.min.js`: three.js r137 (MIT).
-- Sand engine `lib/sandsim.js`: **original implementation in this repo** (© 2026 Franky100-pig, MIT).
-  Only the *ideas* of MIT-licensed projects (neon-sand, SandGears) were referenced; no code was copied.
-  Sandboxels (R74n Content License, All Rights Reserved) was **not** referenced or copied.
+- `lib/sandsim.js`: original in this repo (© 2026 Franky100-pig, MIT).
 
 ## Ideas for later
 
 - The AI's ink **physically retreats** when the user paints (inject reverse velocity, not just "no new strokes").
 - Upgrade the dumb AI to a sketch-RNN-style stroke-sequence model (still optional, still offline).
 
-## If you're struggling / 如果你正很难受
+## If you're struggling
 
 > 这是一个玩具，不是治疗，它不能替代专业帮助。如果你或身边的人正处于危机中，请主动求助——和受过训练的人聊聊，往往比想象中更有用。下面的热线都是免费且保密的。
 >

@@ -31,32 +31,22 @@ All three are screenshots directly from the website, not made-up ones.
 ## How it works
 
 - **Ink mode**: you paint on the paper and the ink keeps bleeding on its own. A quiet "dumb AI" companion occasionally adds a stroke of its own — but the moment you touch the canvas it steps aside, and its next stroke avoids where you just painted. Your brush always wins.
-- **Sand mode**: pick a material and pour it onto the canvas — sand / fire / water / cloud / bomb / seed / plant / snow / steam — and watch them fall, rise, flow, grow, and react like in the classic Powder Game. The same AI companion quietly pours a little pile in a corner and stops as soon as you start drawing.
+- **Sand mode**: pick a material and pour it onto the canvas — sand / fire / water / cloud / bomb / seed / plant / snow / steam — and watch them fall, rise, flow, and react. The same AI companion quietly pours a little pile and stops as soon as you draw.
 
 > This is the first minimal slice of IDEAS.md #001 ("offline sandbox healing tool"):
 > ink fluid + dumb AI + interrupt/yield rules. **No machine learning involved.**
 
 ## Run it (fully offline)
 
-**Desktop app (recommended):** download the installer for your platform from the
-[Releases](https://github.com/Franky100-pig/Sand-and-Ink/releases) page —
-`Sand-and-Ink-<version>-<arch>.dmg` for macOS (Apple Silicon & Intel) and
-`Sand-and-Ink-Setup-<version>.exe` for Windows. The desktop app is the same
-offline sandbox wrapped in a small Electron shell: no network access, no
-auto-update, no data stored.
+**Desktop**: download the installer from [Releases](https://github.com/Franky100-pig/Sand-and-Ink/releases) — `.dmg` for macOS (Apple Silicon & Intel), `.exe` for Windows. Same offline sandbox in a small Electron shell.
 
-**In the browser:** just double-click `index.html`. Every asset (engines, three.js, UI) is local — zero network requests, no backend, no account.
+**Browser**: double-click `index.html`. Every asset is local — zero network requests.
 
-**Installable (PWA):** on a phone or desktop browser use "Add to Home Screen" / "Install". It then opens full-screen and keeps working offline — a service worker caches the local files (no account, no server).
+**PWA**: "Add to Home Screen" / "Install"; opens full-screen and works offline.
 
-> **Maintaining the service worker:** whenever you change the contents of any file listed in `ASSETS`, bump `CACHE` in `sw.js` (e.g. `ink-quiet-v3` → `v4`). The page itself is network-first, so a *stale* worker can otherwise pair a fresh `index.html` with an old `src/app.js` — the UI then shows a button whose JS handler doesn't exist yet, and clicking it silently does nothing. Static assets use stale-while-revalidate as a second line of defence, and `install` fetches with `cache: 'reload'` so it can never pre-cache an HTTP-cached stale copy — but bumping the version is what clears the old cache immediately.
->
-> **If a deployed update seems not to appear:** a browser that already has the site open keeps running the JS it loaded — reload the page. To be sure whether it's the server or your cache, open the site in a **private/incognito window** (no service worker, no cache): if it works there, the deploy is fine and it's your browser's cache. To force a clean slate: DevTools → Application → Service Workers → **Unregister**, then reload. Sites opened before a failed update can be one generation behind; a fresh visitor is never affected.
-
-If your browser restricts `file://`, serve the folder locally (still offline):
+If your browser restricts `file://`, serve locally (still offline):
 
 ```bash
-# clone 后仓库根目录就是应用本体，直接起服务即可
 python3 -m http.server 8080
 # open http://localhost:8080
 ```

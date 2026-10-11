@@ -53,118 +53,26 @@ python3 -m http.server 8080
 
 ## Verify it
 
-### 1. One-click self test (automated — start here)
+Open `selftest.html` — two groups of checks (Ink 8, Sand 22) show PASS/FAIL. All green = both engines and the interrupt/yield rules are alive.
 
-Open `selftest.html`. It runs two groups of checks and shows PASS/FAIL:
-
-- **Ink group (8 checks)**: three.js / engine loaded locally, WebGL context works;
-  blank paper at start; the canvas actually darkens after a stroke; PNG export;
-  **AI yields while the user is drawing (no new ink)**; **AI takes over after the user stops**;
-  no ink after the AI toggle is off; clearing returns to blank paper.
-- **Sand group (22 checks)**: engine loads/instantiates; sand falls, water finds the floor;
-  fire burns out (no fuel), water douses fire, cloud rains, bomb fuse detonates;
-  **snow falls and piles; seeds germinate into plants near water (bounded growth);
-  fire ignites plants and burns them down; fire turns water into steam and steam
-  condenses back to water (closed loop)**;
-  clearing resets the grid (EMPTY count back to full); PNG export;
-  mode toggle works (sand mode hides the ink palette);
-  **user-active yield / idle takeover / full-box restraint in sand mode**;
-  same seed → same result (determinism).
-
-All green = both engines and the interrupt/yield rules are alive.
-
-### 2. Prove it's offline (the decisive test)
-
-The self test can't prove offline-ness. Either of these is the real verdict:
-
-- **Disconnect**: turn off Wi-Fi → open `index.html` → paint. Ink still bleeds, export still works = offline confirmed.
-- **DevTools**: F12 → Network → check **Offline** → reload. The page keeps working and the request list
-  contains only local files (`index.html`, `styles.css`, `lib/*.js`, `src/app.js`) — **zero external domains**.
-
-To confirm at the source level:
-
-```bash
-grep -rnE "fetch\(|XMLHttpRequest|PocketBase|https?://" src/ index.html lib/suminagashi.js
-```
-
-Expected: only a GitHub link inside a comment in `lib/suminagashi.js` (attribution, not a request).
-Note: three.js ships loader code internally, but this project never calls any loader and loads no
-textures/models, so that code path is never triggered.
-
-### 3. Feel (only you can judge this)
-
-- Drag a stroke, let go — the ink keeps spreading for a while, so the simulation is always running.
-- **Yield A/B test**: set "AI patience" to minimum (2s).
-  - Sit still for 10 seconds → about 5 blue strokes should appear (the AI's ink).
-  - Then draw continuously for 10 seconds → **0** new blue strokes (the AI yields the whole time).
-- After you stop, the AI resumes, and its next blue stroke **avoids where you just painted**.
+**Prove it's offline**: turn off Wi-Fi → open `index.html` → paint. Still works = offline confirmed. Or DevTools → Network → check **Offline** → reload; the request list shows only local files, zero external domains.
 
 ## Controls
 
-- **Paint**: press and drag on the canvas. The ink keeps drifting after you release.
-- **Ink colors**: five dots at the bottom (pine soot / vermilion / pine needle / AI blue / **white**).
-  **White is the "lighten / leave-blank" tool**: when things get too dark, brush white over the ink
-  to fade it back to paper (like an eraser). White strokes don't splash velocity — they quietly lighten.
-- **Brush**: adjusts ink volume (also affects how much the stroke spreads/flows).
-- **Concentration**: only adjusts ink darkness, not spread. **Applies instantly to the whole sheet** —
-  moving the slider re-tints your strokes, the AI's strokes, and all future strokes together
-  (the engine deepens the ink layer at render time). Ink no longer fades over time by default
-  (dye dissipation is near zero: ~12% after ten minutes idle), but it still bleeds naturally.
-- **AI companion**: on/off. When on, it paints a stroke whenever you've been quiet for a bit; it steps away the moment you draw.
-- **AI patience**: how long it waits between strokes (higher = slower, less intrusive).
-- **Soundscape** (声音 / Sound): a quiet ambience you can turn on — it cycles **off → rain (雨) → tide (潮)**. It is *synthesized live in your browser* (filtered noise + a slow swell), not an audio file, so it stays 100% offline with nothing to download and no licensing to worry about. A small **volume** slider appears only while sound is on. Default off.
-- **Clear**: empties the paper; ink starts fresh from blank.
-- **Save**: exports the current frame as PNG (via `toBlob`, robust on `file://` and Safari).
-  Note: **the WorkBuddy preview iframe blocks downloads** — open `index.html` in a real browser
-  and click Save there; the file goes to your downloads folder. The button flashes
-  "已保存 ✓" (saved) as feedback.
-- **Save Movie** (录制 / Record): records your *process*, not just the final frame, and exports a
-  short clip (~15s). Click **录制** to start, create, then click **停止** to finish — the recording
-  is re-timed to ≈15 seconds regardless of how long you actually drew (a long session is compressed,
-  a short one is slowed down). It is encoded entirely in the browser with `MediaRecorder` +
-  `captureStream`. It exports **MP4 (H.264) by default** — the most widely playable format, so a clip
-  drops straight into Photos / WeChat / any editor — and automatically falls back to WebM/VP9 on
-  browsers that cannot record MP4 (Firefox). Fully offline, no upload, no files.
-  Note: like Save, the download is blocked inside the WorkBuddy preview; open `index.html` in a
-  real browser to get the file. If your browser can't encode video, the button reports "不支持"
-  (No video) instead of failing.
+- **Paint**: press and drag; ink keeps drifting after release.
+- **Ink colors**: five dots (pine soot / vermilion / pine needle / AI blue / **white**). White lightens/fades ink back to paper.
+- **Brush**: ink volume (also affects spread/flow).
+- **Concentration**: ink darkness only, applied instantly to the whole sheet.
+- **AI companion / patience**: on = paints when you're quiet; steps away the moment you draw. Patience = wait between strokes.
+- **Soundscape**: cycles off → rain → tide; synthesized live, 100% offline. Default off.
+- **Clear / Save / Save Movie**: Clear empties the paper; Save exports PNG; Save Movie records ~15s (MP4, falls back to WebM).
+- **Hide (C)**: hides the toolbar; back with C or Esc.
 
-### Sand mode (toggle to 「沙」)
-
-- **Ink / Sand / Fine**: the segmented button on the left. Switching to sand swaps the five ink dots for
-  **nine material dots**, and the physics switches from fluid to cellular automaton; the ink canvas
-  freezes and is restored intact when you switch back.
-- **Materials** (a physics sandbox with Powder Game–style reactions): sand / fire / water / cloud /
-  bomb / seed / plant / snow / steam.
-  - **Sand**: falls, piles into dunes (angle of repose), sinks in water.
-  - **Fire**: rises (hot gas), flickers, burns itself out into smoke (cloud) without fuel;
-    doused by water (the water becomes steam); detonates bombs;
-    **ignites plants and seeds** (fire spreads along vines).
-  - **Water**: falls, pools, never evaporates; douses fire (and becomes steam doing it).
-  - **Cloud**: rises, drifts with the wind; rains into water; condenses near water/fire
-    (being scorched by fire makes it rain and douse the fire).
-  - **Bomb grains**: fall like powder; explode on a ~3-second fuse or on fire contact —
-    a core void plus a burning ring; other bombs in the blast chain-detonate.
-    An "explosion" interaction (part of the sand half's physics).
-  - **Seed**: falls like powder; **germinates into a plant** near water; flammable.
-  - **Plant**: paint it directly or grow it from seeds; grows new shoots upward/sideways
-    under a per-cell growth budget (a few layers, then it stops — **it can't flood the grid**);
-    grows faster next to water; once ignited, the whole vine burns down.
-  - **Snow**: falls slowly, piles into fluffy steep drifts; slowly melts while floating on water;
-    melts instantly near fire.
-  - **Steam**: the gas that fire boils out of water; rises, drifts, and at end of life (~2–4s)
-    **condenses back into a droplet** — water → steam → rain → water, a closed loop.
-- **Brush**: same slider, now controlling the pour width.
-- **AI companion / patience**: same yield rules as ink mode. In sand mode the AI slowly pours a
-  little mound in a corner and stops the moment you draw; it also **holds back when the box is
-  more than ~35% full**, so the canvas never turns to mush.
-- The concentration slider is ink-mode only; it hides automatically in sand mode.
-- **Hide (or press C)**: hides the toolbar for an immersive view of the AI
-  painting. Bring it back with the button, with **C** again, or with **Esc**.
-  Right after hiding, a faint hint shows for a few seconds so you always know
-  the way back; while the canvas is still empty it stays on screen.
-- **Mode tips**: hover the 墨 / 沙 / 精 buttons (or focus them for screen
-  readers) to see what each mode does.
+### Sand mode
+- **Ink / Sand / Fine**: segmented button swaps the five ink dots for nine material dots; physics switches fluid ↔ cellular automaton.
+- **Materials**: sand / fire / water / cloud / bomb / seed / plant / snow / steam — each with Powder Game–style reactions (fire burns out, water douses, seeds sprout, snow piles, steam condenses back to water).
+- **AI**: same yield rules; holds back when the box is >~35% full.
+- **Concentration** slider hides in sand mode.
 
 ## Design discipline (from IDEAS.md v3)
 

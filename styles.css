@@ -197,3 +197,35 @@ body.bar-hidden #immersive-note { display: block; }
 }
 @keyframes movie-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 #movie:disabled { opacity: 0.6; cursor: default; }
+
+/* 归零可撤回：按钮临时进入「撤回」态，给一个安静的高亮（刻意不显示倒计时） */
+#clear.undo {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+#clear.undo::before { content: '↩ '; }
+
+/* ── 移动端：加大触控目标、收紧间距，让工具栏在窄屏上整齐换行、手指好点 ── */
+
+/* 窄屏（手机 / 平板 / 小窗）：
+   不写宽度时 left:50% 会把可用宽度卡在「半屏」，工具栏会塌成一条竖井。
+   置为 max-content 让它可以铺满可用宽度、只按需换行。桌面宽窗不受影响。 */
+@media (max-width: 900px) {
+  #bar { width: max-content; }
+}
+
+@media (max-width: 640px) {
+  #bar { gap: 7px; padding: 6px 9px; font-size: 12px; border-radius: 12px; }
+  .group { gap: 6px; }
+  .mode-btn { padding: 6px 11px; }
+  .ink { width: 26px; height: 26px; }
+  .slider input[type="range"] { width: 64px; }
+  button.toggle, button.ghost { padding: 7px 11px; min-height: 34px; }
+}
+@media (max-width: 430px) {
+  #bar { gap: 6px; padding: 5px 8px; font-size: 11.5px; }
+  .ink { width: 24px; height: 24px; }
+  .slider input[type="range"] { width: 56px; }
+  .mode-btn { padding: 5px 9px; }
+  button.toggle, button.ghost { padding: 6px 9px; min-height: 32px; }
+}

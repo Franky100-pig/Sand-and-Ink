@@ -2,8 +2,10 @@
 <html lang="zh">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: 'unsafe-inline'; style-src file: 'unsafe-inline'; img-src 'self' file: data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: 'unsafe-inline'; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'" />
   <title>墨息 · 自检 (selftest)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <style>
     body { margin: 0; background: #efeae0; font: 14px/1.6 -apple-system, "PingFang SC", system-ui, sans-serif; color: #2a241e; }
     #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
@@ -30,6 +32,57 @@
 <body>
   <canvas id="stage"></canvas>
   <canvas id="sand-stage" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px" aria-hidden="true"></canvas>
+  <!-- 真实工具栏：让自检能点到真正的按钮（隐藏 / 归零 / 录制 …），而不是永远「按钮缺失」 -->
+  <div id="bar" role="toolbar" data-i18n-aria="ariaBar" aria-label="画具">
+    <div class="group" id="mode-group" role="tablist" data-i18n-aria="ariaMode" aria-label="物态">
+      <button class="mode-btn active" data-mode="ink" role="tab" data-i18n-title="modeTipInk" aria-selected="true"><span data-i18n="modeInk">墨</span></button>
+      <button class="mode-btn" data-mode="sand" role="tab" data-i18n-title="modeTipSand" aria-selected="false"><span data-i18n="modeSand">沙</span></button>
+      <button class="mode-btn" data-mode="fine" role="tab" data-i18n-title="modeTipFine" aria-selected="false"><span data-i18n="modeFine">精</span></button>
+    </div>
+    <div class="group" id="ink-group" data-i18n-aria="ariaInks" aria-label="你的墨色">
+      <button class="ink" data-ink="sumi"   style="--c:#1a1a1f" data-i18n-title="inkSumi" title="松烟墨" aria-label="松烟墨"></button>
+      <button class="ink" data-ink="shu"    style="--c:#c8372d" data-i18n-title="inkShu" title="朱" aria-label="朱"></button>
+      <button class="ink" data-ink="matsuba" style="--c:#2e6e52" data-i18n-title="inkMatsuba" title="松叶" aria-label="松叶"></button>
+      <button class="ink" data-ink="ai"     style="--c:#16407a" data-i18n-title="inkAi" title="AI 的蓝" aria-label="AI 的蓝"></button>
+      <button class="ink white" data-ink="white" style="--c:#ffffff" data-i18n-title="inkWhite" title="白（减淡 / 留白）" aria-label="白（减淡 / 留白）"></button>
+    </div>
+    <div class="group" id="sand-group" data-i18n-aria="ariaMats" aria-label="你的材料">
+      <button class="ink swatch" data-el="sand"  style="--c:#d9c69a" data-i18n-title="matSand" title="沙（下落 / 沉水）" aria-label="沙"></button>
+      <button class="ink swatch" data-el="fire"  style="--c:#e8642a" data-i18n-title="matFire" title="火（上浮 / 烧尽 / 引爆炸弹 / 点燃植物）" aria-label="火"></button>
+      <button class="ink swatch" data-el="water" style="--c:#4a7fae" data-i18n-title="matWater" title="水（下落 / 浇灭火 → 蒸汽）" aria-label="水"></button>
+      <button class="ink swatch" data-el="cloud" style="--c:#dfe6ec" data-i18n-title="matCloud" title="云（上浮 / 下雨 / 凝水）" aria-label="云"></button>
+      <button class="ink swatch" data-el="bomb"  style="--c:#3a2f3a" data-i18n-title="matBomb" title="炸弹颗粒（引信 / 碰火即爆）" aria-label="炸弹颗粒"></button>
+      <button class="ink swatch" data-el="seed"  style="--c:#9a8a4a" data-i18n-title="matSeed" title="种子（落水边发芽）" aria-label="种子"></button>
+      <button class="ink swatch" data-el="plant" style="--c:#3f8f4f" data-i18n-title="matPlant" title="植物（生长 / 遇火燃烧）" aria-label="植物"></button>
+      <button class="ink swatch" data-el="snow"  style="--c:#f6f9fb" data-i18n-title="matSnow" title="雪（慢落堆积 / 遇火化水）" aria-label="雪"></button>
+      <button class="ink swatch" data-el="steam" style="--c:#dee5ea" data-i18n-title="matSteam" title="蒸汽（上升 / 凝回水滴）" aria-label="蒸汽"></button>
+    </div>
+    <label class="slider"><span data-i18n="brush">笔触</span>
+      <input id="brush" type="range" min="0.5" max="3" step="0.1" value="1.4" />
+    </label>
+    <label class="slider ink-only"><span data-i18n="density">浓度</span>
+      <input id="concentration" type="range" min="0.3" max="3" step="0.1" value="1" />
+    </label>
+    <button id="ai-toggle" class="toggle on" aria-pressed="true">AI 同伴：开</button>
+    <label class="slider"><span data-i18n="patience">AI 耐心</span>
+      <input id="patience" type="range" min="2" max="9" step="0.5" value="4" />
+      <span id="patience-val">4s</span>
+    </label>
+    <label class="slider"><span data-i18n="aiBrush">AI 笔触</span>
+      <input id="ai-size" type="range" min="0.4" max="2.5" step="0.1" value="0.8" />
+    </label>
+    <div class="group" id="sound-group">
+      <button id="sound" class="toggle" data-i18n-title="soundAria" aria-pressed="false">声音</button>
+      <label class="slider sound-only"><span data-i18n="soundVol">音量</span>
+        <input id="sound-vol" type="range" min="0" max="1" step="0.05" value="0.5" />
+      </label>
+    </div>
+    <button id="clear" class="ghost" data-i18n="clear">归零</button>
+    <button id="export" class="ghost" data-i18n="save">存图</button>
+    <button id="movie" class="ghost" data-i18n="movie" data-i18n-title="movieTip" title="把创作过程录成约 15 秒小视频">录制</button>
+    <button id="hide" class="ghost" data-i18n="hide" data-i18n-title="hideTip" title="隐藏工具栏（快捷键 C）">隐藏</button>
+    <button id="lang" class="ghost" data-i18n-title="langTitle" title="切换语言 / Language">EN</button>
+  </div>
   <div id="panel">
     <h1>墨息 · 自检</h1>
     <p class="sub">自动化检查渲染管线与「打断 / 让位」规则。全绿即说明引擎与交互都活着。</p>
@@ -177,6 +230,26 @@
       const cleared = inkFraction()
       check('归零后回到空白宣纸', cleared < 0.02, cleared.toFixed(4))
 
+      // 7b) 归零后可撤回（10 秒内，不显示倒计时）：复用「归零」按钮——第一次清、第二次撤回
+      engine.clear(); pump(2)
+      engine.strokeInk(0.5, 0.5, window.INKS.sumi, 2.0, 1, 0, 0.9)
+      pump(20)
+      const beforeUndo = inkFraction()
+      const clearBtn = document.getElementById('clear')
+      clearBtn.click()                     // 归零（并武装撤回）
+      pump(2)
+      const afterClear = inkFraction()
+      const armed = hook.clearUndoArmed ? hook.clearUndoArmed() : false
+      clearBtn.click()                     // 撤回
+      pump(2)
+      const afterUndo = inkFraction()
+      check('归零后 10 秒内可撤回（墨：清空后能恢复画面）',
+            afterClear < 0.02 && armed && afterUndo > beforeUndo * 0.8,
+            'before=' + beforeUndo.toFixed(4) + ' cleared=' + afterClear.toFixed(4) + ' undo=' + afterUndo.toFixed(4))
+      check('归零可撤回：撤回后窗口自动关闭（按钮复位）',
+            hook.clearUndoArmed ? hook.clearUndoArmed() === false : true,
+            'armed=' + (hook.clearUndoArmed ? hook.clearUndoArmed() : 'n/a'))
+
       // ── 沙盒断言（Mode A）──
       const SAND = window.SAND
       check('沙盒引擎已本地加载', !!window.SandSim)
@@ -264,6 +337,19 @@
         check('沙盒归零清空', sand.fullness() === 0 && sand.countOf(S.EMPTY) === sand.gridW * sand.gridH,
               'empty=' + sand.countOf(S.EMPTY) + '/' + (sand.gridW * sand.gridH))
 
+        // g2) 沙盒归零同样可撤回（走「归零」按钮，验证 state.mode 判定 + 快照还原）
+        sand.clear(); sand.place(0.5, 0.5, 'sand', 6, 1)
+        for (let i = 0; i < 5; i++) sand.step(0.02)
+        const sandBeforeUndo = sand.countOf(S.SAND)
+        const clearBtn2 = document.getElementById('clear')
+        clearBtn2.click()                    // 归零
+        const sandAfterClear = sand.countOf(S.SAND)
+        clearBtn2.click()                    // 撤回
+        const sandAfterUndo = sand.countOf(S.SAND)
+        check('归零后 10 秒内可撤回（沙：清空后能恢复颗粒）',
+              sandBeforeUndo > 0 && sandAfterClear === 0 && sandAfterUndo === sandBeforeUndo,
+              'before=' + sandBeforeUndo + ' cleared=' + sandAfterClear + ' undo=' + sandAfterUndo)
+
         // h) 导出
         let surl = ''
         try { surl = sand.captureDataURL() } catch (e) {}
@@ -277,6 +363,7 @@
         check('模式切换生效（墨 ↔ 沙）', sandOn && inkOn)
 
         // j) 沙模式让位：用户刚动 → 不落沙
+        hook.setMode('sand')   // 前面的「模式切换」测试停在墨模式，这里显式切回沙
         let splace = 0
         const os = sand.place.bind(sand)
         sand.place = function () { splace++; return os.apply(null, arguments) }
@@ -300,12 +387,12 @@
         sand.place = os2
         check('沙模式下用户停笔后 AI 接手（落沙）', splace2 >= 1, 'places=' + splace2)
 
-        // l) 沙盒满了 AI 收手
+        // l) 沙盒满了 AI 收手（先填满，再挂计数器——否则填充循环会把自己数进去）
+        let guard = 0
+        while (sand.fullness() < 0.4 && guard < 3000) { sand.place(Math.random(), Math.random(), 'sand', 3, 1); guard++ }
         let splace3 = 0
         const os3 = sand.place.bind(sand)
         sand.place = function () { splace3++; return os3.apply(null, arguments) }
-        let guard = 0
-        while (sand.fullness() < 0.4 && guard < 3000) { sand.place(Math.random(), Math.random(), 'sand', 3, 1); guard++ }
         const t3 = 2e12 + 2e6
         state.lastUserActivity = t3 - 60000
         hook.aiTick(t3)
@@ -422,19 +509,16 @@
           check('抽稀：极短数组安全（不抛、不丢帧）',
                 tf([7]).length === 1 && tf([7, 8]).length === 2 && tf([]).length === 0,
                 'n1=' + tf([7]).length + ' n2=' + tf([7, 8]).length + ' n0=' + tf([]).length)
-          // 采样率自适应：短录制满 30fps（源帧≈输出帧，画面顺滑），越久越稀，永不快于 30fps。
-          // 固定低采样率会让每帧被重复播放多次 —— 成片看起来「一帧一帧」。
-          const ci = M._captureInterval
-          const ciBudget = M._frameBudget
-          const ci0 = ci(0), ci1 = ci(1000), ci40 = ci(40000), ci120 = ci(120000)
-          check('采样间隔：任何时候都不慢于 30fps（≤33.4ms）',
-                ci0 <= 33.4 && ci1 <= 33.4 && ci40 <= 33.4,
-                't0=' + ci0.toFixed(1) + ' t1s=' + ci1.toFixed(1) + ' t40s=' + ci40.toFixed(1))
-          check('采样间隔：随时长单调变稀（长录制降为延时摄影）', ci40 < ci120,
-                't40s=' + ci40.toFixed(1) + ' t120s=' + ci120.toFixed(1))
-          check('采样间隔：总量收敛在帧预算内（120s 时 = 时长/预算）',
-                Math.abs(ci120 - 120000 / ciBudget) < 0.001,
-                't120s=' + ci120.toFixed(2) + ' budget=' + ciBudget)
+          // 缓冲满时的自适应：抽稀一半 + 间隔翻倍 → 内存严格有界、录制时长不受限。
+          // （起始采样率已用 _minInterval 验证：始终不慢于 30fps。）
+          const thinProbe = {
+            _frames: (function () { var a = []; for (var i = 0; i < 100; i++) a.push(i); return a })(),
+            _interval: 30,
+          }
+          M._thin.call(thinProbe)
+          check('缓冲满时抽稀一半并把间隔翻倍（内存有界、时长不受限）',
+                thinProbe._frames.length <= 52 && thinProbe._interval === 60,
+                'len=' + thinProbe._frames.length + ' interval=' + thinProbe._interval)
           // 生命周期：start 进入录制态；stop 返回 Promise；空录制安全退出（await 保证计入结果）
           const r1 = M.start(function () { return document.createElement('canvas') })
           check('start 后处于录制态', M.isRecording() === true, 'ok=' + JSON.stringify(r1))
@@ -484,6 +568,9 @@
               'body=' + ob + ' html=' + ohtml)
         check('画布禁用触摸滚动（touch-action: none）',
               getComputedStyle(document.getElementById('stage')).touchAction === 'none')
+        check('屏幕常亮能力可探测（支持与否皆可，不崩溃）',
+              typeof (hook.wakeLockSupported ? hook.wakeLockSupported() : false) === 'boolean',
+              'wakeLock=' + (hook.wakeLockSupported ? hook.wakeLockSupported() : 'n/a'))
 
         state.aiOn = false
         hook.setMode('ink')

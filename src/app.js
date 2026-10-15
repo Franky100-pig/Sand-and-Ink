@@ -28,7 +28,7 @@
       modeTipFine: '精：无 AI，细笔、少扩散，自己创作',
       hide: '隐藏', hideTip: '隐藏工具栏（快捷键 C）',
       brush: '笔触', density: '浓度', patience: 'AI 耐心', aiBrush: 'AI 笔触',
-      clear: '归零', save: '存图', saved: '已保存 ✓',
+      clear: '归零', undo: '撤回', save: '存图', saved: '已保存 ✓',
       aiOn: 'AI 同伴：开', aiOff: 'AI 同伴：关',
       hintInk: '落笔，或让 AI 先画。你随时可以打断它。',
       hintSand: '倒一把沙，或让 AI 慢慢堆一座小丘。你随时可以打断它。',
@@ -53,7 +53,7 @@
       modeTipFine: 'Fine: no AI, fine brush, minimal spread — create on your own',
       hide: 'Hide', hideTip: 'Hide the toolbar (shortcut: C)',
       brush: 'Brush', density: 'Density', patience: 'AI patience', aiBrush: 'AI brush',
-      clear: 'Clear', save: 'Save PNG', saved: 'Saved ✓',
+      clear: 'Clear', undo: 'Undo', save: 'Save PNG', saved: 'Saved ✓',
       aiOn: 'AI companion: on', aiOff: 'AI companion: off',
       hintInk: 'Paint, or let the AI start. You can interrupt it anytime.',
       hintSand: 'Pour some sand, or let the AI pile a little dune. You can interrupt it anytime.',
@@ -131,6 +131,12 @@
   let lastSample = 0          // 上次感知整张纸明暗的时间戳(ms)
   let canvasDark = 0          // 整张纸平均暗度：0=纸白，1=全黑（供 AI 自我收敛）
 
+  // 归零后的可撤回窗口（10 秒）。刻意不显示倒计时：只把「归零」按钮临时变成「撤回」。
+  const CLEAR_UNDO_MS = 10000
+  let clearUndoArmed = false
+  let clearUndoSnap = null    // { mode:'sand', snap } 或 { mode:'ink' }（墨的快照存在引擎里）
+  let clearUndoTimer = 0
+
   // ── 坐标：屏幕像素 → 归一化 UV（y 翻转，因为 WebGL 原点在左下）──
   function toUV(e) {
     const r = canvas.getBoundingClientRect()
@@ -181,6 +187,7 @@
   }
   canvas.addEventListener('pointerdown', (e) => {
     e.preventDefault()
+    cancelClearUndo()          // 又开始画了：关掉「撤回归零」窗口
     state.drawing = true
     state.lastUV = null
     pointerAct(toUV(e), true)
@@ -454,6 +461,7 @@
     setHint(I18N[state.lang][hintKey])
     state.drawing = false
     state.lastUV = null
+    cancelClearUndo()          // 切模式也关掉「撤回归零」窗口
   }
   modeBtns.forEach((b) => on(b, 'click', () => setMode(b.dataset.mode)))
   setMode('ink')
@@ -478,6 +486,7 @@
     if (langBtn) langBtn.textContent = state.lang === 'zh' ? 'EN' : '中文'
     const hintKey = state.mode === 'sand' ? 'hintSand' : (state.mode === 'fine' ? 'hintFine' : 'hintInk')
     if (!hintGone) setHint(dict[hintKey])
+    if (clearUndoArmed) setClearLabel(dict.undo)   // 撤回窗口开着时，标签随语言走
   }
   on($('lang'), 'click', () => {
     state.lang = state.lang === 'zh' ? 'en' : 'zh'
@@ -583,10 +592,47 @@
   on(soundVol, 'input', (e) => { if (window.Soundscape) window.Soundscape.setVolume(parseFloat(e.target.value)) })
   if (window.Soundscape) refreshSoundBtn()
 
+  // ── 归零 + 「10 秒内可撤回」──
+  // 不显示倒计时：归零后按钮临时变成「撤回」，再点一次还原画面；10 秒后自动变回「归零」。
+  // 用户一旦再落笔或切换模式，撤回窗口即关闭（避免把旧画面贴回新笔触之上）。
+  function setClearLabel(text) { const b = $('clear'); if (b) b.textContent = text }
+  function cancelClearUndo() {
+    if (!clearUndoArmed) return
+    clearUndoArmed = false
+    clearUndoSnap = null
+    clearTimeout(clearUndoTimer)
+    const b = $('clear')
+    if (b) b.classList.remove('undo')
+    setClearLabel((I18N[state.lang] || I18N.zh).clear)
+  }
+  function armClearUndo() {
+    clearUndoArmed = true
+    const b = $('clear')
+    if (b) b.classList.add('undo')
+    setClearLabel((I18N[state.lang] || I18N.zh).undo)
+    clearTimeout(clearUndoTimer)
+    clearUndoTimer = setTimeout(cancelClearUndo, CLEAR_UNDO_MS)
+  }
+  function performClearUndo() {
+    if (!clearUndoArmed || !clearUndoSnap) { cancelClearUndo(); return }
+    if (clearUndoSnap.mode === 'sand' && sand) sand.restore(clearUndoSnap.snap)
+    else engine.restoreDye()
+    cancelClearUndo()
+  }
+
   on($('clear'), 'click', () => {
-    // 归零：清空画布，并取消沙模式下 AI 正在进行的连浇，让它成为一次真正的重置
-    if (state.mode === 'sand' && sand) { sand.clear(); aiPour = null }
-    else engine.clear()
+    if (clearUndoArmed) { performClearUndo(); return }   // 第二次点 = 撤回
+    // 第一次点 = 归零：先留一份可撤回的快照，再清空
+    // （并取消沙模式下 AI 正在进行的连浇，让它成为一次真正的重置）
+    if (state.mode === 'sand' && sand) {
+      clearUndoSnap = { mode: 'sand', snap: sand.snapshot() }
+      sand.clear(); aiPour = null
+    } else {
+      engine.snapshotDye()
+      clearUndoSnap = { mode: 'ink' }
+      engine.clear()
+    }
+    armClearUndo()
   })
 
   on($('export'), 'click', () => {
@@ -684,6 +730,28 @@
     })
   }
 
+  // ── 屏幕常亮（Screen Wake Lock）：用应用时不让屏幕熄灭 ──
+  // 方便把沙盘 / 墨景长时间挂着看。Safari 目前不支持 → 特性探测后静默跳过。
+  let wakeLock = null
+  async function requestWakeLock() {
+    try {
+      if (!navigator.wakeLock || document.visibilityState !== 'visible' || wakeLock) return
+      wakeLock = await navigator.wakeLock.request('screen')
+      wakeLock.addEventListener('release', () => { wakeLock = null })
+    } catch (e) { wakeLock = null }
+  }
+  function releaseWakeLock() {
+    try { if (wakeLock) wakeLock.release() } catch (e) {}
+    wakeLock = null
+  }
+  on(document, 'visibilitychange', () => {
+    if (document.visibilityState === 'visible') requestWakeLock()
+    else releaseWakeLock()               // 切后台就放掉，别白白耗电
+  })
+  requestWakeLock()                      // 页面可见时先申请一次
+  on(window, 'pointerdown', requestWakeLock)   // 部分浏览器要求用户手势后才授予
+  on(window, 'keydown', requestWakeLock)
+
   // 提示语：用户一开始画就淡出
   function setHint(text) { if (hint && !hintGone) hint.textContent = text }
   function fadeHint() {
@@ -695,7 +763,12 @@
   setTimeout(fadeHint, 6000) // 没动手也 6 秒后淡出
 
   // 测试钩子：只给 selftest.html 用，正常打开页面时无副作用。
-  window.__ink = { engine, sand, state, aiTick, advanceAiPour, setMode, sound: window.Soundscape, movie: window.Movie }
+  window.__ink = {
+    engine, sand, state, aiTick, advanceAiPour, setMode,
+    sound: window.Soundscape, movie: window.Movie,
+    clearUndoArmed: () => clearUndoArmed, performClearUndo, cancelClearUndo,
+    wakeLockSupported: () => !!navigator.wakeLock,
+  }
 
   } catch (fatal) {
     // 任何初始化期异常都暴露给 selftest，而不是让页面静默崩溃

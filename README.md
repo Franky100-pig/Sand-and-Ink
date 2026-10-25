@@ -65,8 +65,9 @@ Open `selftest.html` — two groups of checks (Ink 8, Sand 22) show PASS/FAIL. A
 - **Concentration**: ink darkness only, applied instantly to the whole sheet.
 - **AI companion / patience**: on = paints when you're quiet; steps away the moment you draw. Patience = wait between strokes.
 - **Soundscape**: cycles off → rain → tide; synthesized live, 100% offline. Default off.
-- **Clear / Save / Save Movie**: Clear empties the paper; Save exports PNG; Save Movie records ~15s (MP4, falls back to WebM).
+- **Clear / Save / Save Movie**: Clear empties the paper; after clearing it becomes **Undo** for 10 seconds (no countdown) — click it to bring the painting back. Save exports PNG; Save Movie records ~15s (MP4, falls back to WebM).
 - **Hide (C)**: hides the toolbar; back with C or Esc.
+- **Keyboard**: `1`/`2`/`3` switch Ink/Sand/Fine · `S` save · `R` clear (undoable) · `M` record · `[`/`]` brush size · `C` hide / `Esc` show.
 
 ### Sand mode
 - **Ink / Sand / Fine**: segmented button swaps the five ink dots for nine material dots; physics switches fluid ↔ cellular automaton.

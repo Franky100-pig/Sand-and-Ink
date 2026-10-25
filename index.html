@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#efeae0" />
-  <!-- 离线隐私由浏览器强制执行：禁止一切网络连接、外部脚本、嵌入与表单提交 -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'" />
+  <!-- 离线隐私由浏览器强制执行：禁止一切网络连接、外部脚本、嵌入与表单提交；
+       同时显式放行 manifest（PWA）与同源 worker（SW），并禁止被 iframe 嵌入 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data: blob:; manifest-src 'self' file:; worker-src 'self' file:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" />
   <title>墨息 · Ink Quiet — 离线沙盒疗愈</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icon.svg" />

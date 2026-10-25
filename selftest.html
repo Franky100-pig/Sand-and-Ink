@@ -572,6 +572,33 @@
               typeof (hook.wakeLockSupported ? hook.wakeLockSupported() : false) === 'boolean',
               'wakeLock=' + (hook.wakeLockSupported ? hook.wakeLockSupported() : 'n/a'))
 
+        // u) 键盘快捷键：1/2/3 切模式；[ / ] 调笔触（不碰下载 / 录制）
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }))
+        const kSand = state.mode === 'sand'
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }))
+        const kInk = state.mode === 'ink'
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '3' }))
+        const kFine = state.mode === 'fine'
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }))
+        check('键盘 1/2/3 切换模式（墨 / 沙 / 精）',
+              kSand && kInk && kFine && state.mode === 'ink',
+              'sand=' + kSand + ' ink=' + kInk + ' fine=' + kFine + ' now=' + state.mode)
+
+        const brushEl = document.getElementById('brush')
+        const b0 = parseFloat(brushEl.value)
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: ']' }))
+        const bUp = parseFloat(brushEl.value)
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '[' }))
+        const bBack = parseFloat(brushEl.value)
+        check('键盘 [ / ] 调节笔触（且回得来）', bUp > b0 && Math.abs(bBack - b0) < 1e-6,
+              'start=' + b0 + ' up=' + bUp + ' back=' + bBack)
+
+        // u2) 右键 / 长按不弹系统菜单
+        const ctxEv = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+        document.getElementById('stage').dispatchEvent(ctxEv)
+        check('画布右键菜单被抑制（作画不被打断）', ctxEv.defaultPrevented === true,
+              'prevented=' + ctxEv.defaultPrevented)
+
         state.aiOn = false
         hook.setMode('ink')
       }

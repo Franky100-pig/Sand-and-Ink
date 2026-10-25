@@ -138,8 +138,8 @@
   let clearUndoTimer = 0
 
   // ── 坐标：屏幕像素 → 归一化 UV（y 翻转，因为 WebGL 原点在左下）──
-  function toUV(e) {
-    const r = canvas.getBoundingClientRect()
+  function toUV(e, r) {
+    r = r || canvas.getBoundingClientRect()
     let x = (e.clientX - r.left) / r.width
     let y = 1 - (e.clientY - r.top) / r.height
     x = Math.min(1, Math.max(0, x))
@@ -196,8 +196,18 @@
   canvas.addEventListener('pointermove', (e) => {
     if (!state.drawing) return
     e.preventDefault()
-    pointerAct(toUV(e), false)
+    // 合并事件：快速划动时浏览器会把多个移动点压进一个事件。逐个喂给引擎，
+    // 笔迹才不会「跳格」；只读一次 rect，避免每个点都触发布局计算。
+    const r = canvas.getBoundingClientRect()
+    const evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || null
+    if (evs && evs.length > 1) {
+      for (let i = 0; i < evs.length; i++) pointerAct(toUV(evs[i], r), false)
+    } else {
+      pointerAct(toUV(e, r), false)
+    }
   })
+  // 长按 / 右键不弹系统菜单，避免打断作画
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault())
   const stop = () => { state.drawing = false; state.lastUV = null }
   canvas.addEventListener('pointerup', stop)
   canvas.addEventListener('pointercancel', stop)
@@ -528,16 +538,40 @@
     document.body.classList.toggle('bar-hidden')
     updateImmersiveNote(true)
   }
+  // 键盘快捷键（桌面顺手，不打断沉浸）：
+  //   1/2/3 切模式 · S 存图 · R 归零 · M 录制 · [ / ] 调笔触 · C 隐藏 · Esc 呼出
+  function isTypingTarget(t) {
+    return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' ||
+      t.tagName === 'SELECT' || t.isContentEditable)
+  }
   on(window, 'keydown', (e) => {
-    if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey && !e.altKey) toggleBarHidden()
-    if (e.key === 'Escape') {   // always a way back
+    if (e.metaKey || e.ctrlKey || e.altKey) return       // 不抢系统 / 浏览器快捷键
+    if (isTypingTarget(e.target)) return                 // 在滑块等控件里正常操作
+    const k = e.key.toLowerCase()
+    if (k === '1') { e.preventDefault(); setMode('ink'); return }
+    if (k === '2') { if (!sand) return; e.preventDefault(); setMode('sand'); return }
+    if (k === '3') { e.preventDefault(); setMode('fine'); return }
+    if (k === 's') { e.preventDefault(); const b = $('export'); if (b) b.click(); return }
+    if (k === 'r') { e.preventDefault(); const b = $('clear'); if (b) b.click(); return }
+    if (k === 'm') { e.preventDefault(); const b = $('movie'); if (b && !b.disabled) b.click(); return }
+    if (k === '[' || k === ']') { e.preventDefault(); adjustBrush(k === ']' ? 0.1 : -0.1); return }
+    if (k === 'c') { e.preventDefault(); toggleBarHidden(); return }
+    if (e.key === 'Escape') {                            // always a way back
       document.body.classList.remove('bar-hidden')
       updateImmersiveNote(false)
     }
   })
   on($('hide'), 'click', toggleBarHidden)
 
-  on($('brush'), 'input', (e) => {
+  const brushInput = $('brush')
+  function adjustBrush(delta) {
+    if (!brushInput) return
+    const cur = parseFloat(brushInput.value || '1.4')
+    const v = Math.min(3, Math.max(0.5, Math.round((cur + delta) * 10) / 10))
+    brushInput.value = String(v)
+    state.strength = v
+  }
+  on(brushInput, 'input', (e) => {
     state.strength = parseFloat(e.target.value)
   })
 
@@ -670,7 +704,7 @@
       }
     } catch (err) {
       // 极端兜底：新标签页打开让用户另存为
-      try { window.open((state.mode === 'sand' && sand) ? sand.captureDataURL() : engine.captureDataURL(), '_blank') } catch (e2) {}
+      try { window.open((state.mode === 'sand' && sand) ? sand.captureDataURL() : engine.captureDataURL(), '_blank', 'noopener') } catch (e2) {}
     }
   })
 

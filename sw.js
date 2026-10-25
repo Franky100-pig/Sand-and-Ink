@@ -6,7 +6,7 @@
  * ⚠️ 维护约定：只要改了下面 ASSETS 里任何一个文件的内容或清单，
  *    必须同时把 CACHE 的版本号 +1。原因见下面 install / fetch 的注释。
  */
-const CACHE = 'ink-quiet-v5'
+const CACHE = 'ink-quiet-v6'
 const ASSETS = [
   'index.html',
   'styles.css',
@@ -48,6 +48,9 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request
   if (req.method !== 'GET') return
+
+  // 只处理同源请求：绝不代理 / 缓存第三方资源（纵深防御，即使上游 CSP 被绕过）。
+  try { if (new URL(req.url).origin !== self.location.origin) return } catch (err) { return }
 
   // 导航请求：network-first，保证页面本身能及时更新；离线或失败则回退缓存页
   if (req.mode === 'navigate') {

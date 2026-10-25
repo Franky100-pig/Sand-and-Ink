@@ -140,7 +140,30 @@
       return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
     }
 
+    // 预检：本地脚本若根本没加载（常见于「只打开了这一个 HTML 文件」——
+    // 预览器 / 文件管理器 / 邮件附件只给单文件，同目录的 lib/、src/ 取不到），
+    // 直接把原因说清楚，而不是抛 4 条看不懂的 FAIL。
+    function preflight() {
+      const missing = []
+      if (!window.THREE) missing.push('lib/three.min.js')
+      if (!window.Suminagashi) missing.push('lib/suminagashi.js')
+      if (!window.SandSim) missing.push('lib/sandsim.js')
+      if (!window.__ink) missing.push('src/app.js')
+      if (!missing.length) return true
+      summary.style.color = '#c8372d'
+      summary.textContent = '本地脚本没加载（缺 ' + missing.length + ' 个）'
+      list.innerHTML =
+        '<li class="fail"><span class="mark">!</span><span>缺少：' + missing.join('、') + '</span></li>' +
+        '<li class="fail"><span class="mark">i</span><span>' +
+        '多半是「只打开了这一个 HTML 文件」——预览器 / 文件管理器 / 邮件附件只给单文件，' +
+        '同目录的 lib/、src/、styles.css 取不到。请用完整目录 + 本地 http 服务器，' +
+        '或直接打开线上站点的 selftest.html。' +
+        '</span></li>'
+      return false
+    }
+
     async function main() {
+      if (!preflight()) return
       await nextFrame()
 
       // 1) 依赖与实例化

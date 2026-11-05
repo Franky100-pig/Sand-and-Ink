@@ -461,6 +461,28 @@
         check('精细模式：笔触参数变细 + AI 让位，切回恢复', fineOk && backOk,
               'fine=' + fineOk + ' back=' + backOk)
 
+        // o2) 静（零扩散）：参数归零、AI 让位；画完不再扩散
+        hook.setMode('ink')
+        engine.clear(); pump(2)
+        hook.setMode('still')
+        const stillOk = state.mode === 'still' && state.aiOn === false &&
+              hook.engine.config.SPLAT_VELOCITY === 0 && hook.engine.config.CURL === 0
+        engine.clear(); pump(2)
+        for (let i = 0; i <= 40; i++) {
+          engine.strokeInk(0.2 + i * 0.01, 0.5, window.INKS.sumi, 1.5, 1, 0, 0.9)
+        }
+        pump(2)
+        const stillF1 = inkFraction()
+        for (let i = 0; i < 120; i++) engine.step(0.016)
+        engine.render(performance.now())
+        const stillF2 = inkFraction()
+        check('静模式：零扩散参数生效 + AI 让位', stillOk,
+              'vel=' + hook.engine.config.SPLAT_VELOCITY + ' curl=' + hook.engine.config.CURL + ' ai=' + state.aiOn)
+        check('静模式：画完后墨不再扩散（面积基本不变）',
+              Math.abs(stillF2 - stillF1) < 0.003,
+              'f1=' + stillF1.toFixed(4) + ' f2=' + stillF2.toFixed(4))
+        hook.setMode('ink')
+
         // p) 精细模式下画笔必须走水墨引擎（回归测试：pointerAct 曾漏掉 fine）
         hook.setMode('fine')
         let fineStrokes = 0
@@ -602,10 +624,12 @@
         const kInk = state.mode === 'ink'
         window.dispatchEvent(new KeyboardEvent('keydown', { key: '3' }))
         const kFine = state.mode === 'fine'
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '4' }))
+        const kStill = state.mode === 'still'
         window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }))
-        check('键盘 1/2/3 切换模式（墨 / 沙 / 精）',
-              kSand && kInk && kFine && state.mode === 'ink',
-              'sand=' + kSand + ' ink=' + kInk + ' fine=' + kFine + ' now=' + state.mode)
+        check('键盘 1/2/3/4 切换模式（墨 / 沙 / 精 / 静）',
+              kSand && kInk && kFine && kStill && state.mode === 'ink',
+              'sand=' + kSand + ' ink=' + kInk + ' fine=' + kFine + ' still=' + kStill + ' now=' + state.mode)
 
         const brushEl = document.getElementById('brush')
         const b0 = parseFloat(brushEl.value)

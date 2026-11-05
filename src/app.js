@@ -22,10 +22,11 @@
   // ── 中英双语 UI（字不多，直接上字典；不持久化——隐私承诺：什么都不存）──
   const I18N = {
     zh: {
-      modeInk: '墨', modeSand: '沙', modeFine: '精',
+      modeInk: '墨', modeSand: '沙', modeFine: '精', modeStill: '静',
       modeTipInk: '墨：AI 同伴陪你画，随时可打断它',
       modeTipSand: '沙：九种材料的物理沙盒',
       modeTipFine: '精：无 AI，细笔、少扩散，自己创作',
+      modeTipStill: '静：零扩散，像普通画布，但保留水墨质感',
       hide: '隐藏', hideTip: '隐藏工具栏（快捷键 C）',
       brush: '笔触', density: '浓度', patience: 'AI 耐心', aiBrush: 'AI 笔触',
       clear: '归零', undo: '撤回', save: '存图', saved: '已保存 ✓',
@@ -33,6 +34,7 @@
       hintInk: '落笔，或让 AI 先画。你随时可以打断它。',
       hintSand: '倒一把沙，或让 AI 慢慢堆一座小丘。你随时可以打断它。',
       hintFine: '静心细画。AI 已让位，画布全归你。',
+      hintStill: '墨落纸上不散。像普通画布，只是带水墨质感。',
       inkSumi: '松烟墨', inkShu: '朱', inkMatsuba: '松叶', inkAi: 'AI 的蓝', inkWhite: '白（减淡 / 留白）',
       matSand: '沙（下落 / 沉水）', matFire: '火（上浮 / 烧尽 / 引爆炸弹 / 点燃植物）',
       matWater: '水（下落 / 浇灭火 → 蒸汽）', matCloud: '云（上浮 / 下雨 / 凝水）',
@@ -47,10 +49,11 @@
       langTitle: '切换语言 / Language',
     },
     en: {
-      modeInk: 'Ink', modeSand: 'Sand', modeFine: 'Fine',
+      modeInk: 'Ink', modeSand: 'Sand', modeFine: 'Fine', modeStill: 'Still',
       modeTipInk: 'Ink: an AI companion paints with you — interrupt anytime',
       modeTipSand: 'Sand: a physics sandbox with 9 materials',
       modeTipFine: 'Fine: no AI, fine brush, minimal spread — create on your own',
+      modeTipStill: 'Still: no spread — a plain canvas with an ink-wash look',
       hide: 'Hide', hideTip: 'Hide the toolbar (shortcut: C)',
       brush: 'Brush', density: 'Density', patience: 'AI patience', aiBrush: 'AI brush',
       clear: 'Clear', undo: 'Undo', save: 'Save PNG', saved: 'Saved ✓',
@@ -58,6 +61,7 @@
       hintInk: 'Paint, or let the AI start. You can interrupt it anytime.',
       hintSand: 'Pour some sand, or let the AI pile a little dune. You can interrupt it anytime.',
       hintFine: 'Paint finely. The AI steps aside — the canvas is all yours.',
+      hintStill: 'The ink stays where you put it — a plain canvas with an ink-wash feel.',
       inkSumi: 'Pine soot', inkShu: 'Vermilion', inkMatsuba: 'Pine needle', inkAi: 'AI blue', inkWhite: 'White (lighten / blank)',
       matSand: 'Sand (falls / sinks in water)', matFire: 'Fire (rises / burns out / detonates bombs / ignites plants)',
       matWater: 'Water (falls / douses fire → steam)', matCloud: 'Cloud (rises / rains / condenses)',
@@ -161,13 +165,25 @@
       dx = uv.x - state.lastUV.x
       dy = uv.y - state.lastUV.y
     }
-    const len = Math.hypot(dx, dy)
-    if (len > 1e-5) { dx /= len; dy /= len } else {
+    const rawLen = Math.hypot(dx, dy)
+    let nx, ny
+    if (rawLen > 1e-5) { nx = dx / rawLen; ny = dy / rawLen } else {
       const a = Math.random() * Math.PI * 2
-      dx = Math.cos(a); dy = Math.sin(a)
+      nx = Math.cos(a); ny = Math.sin(a)
     }
     const color = INKS[state.userInk] || INKS.sumi
-    engine.strokeInk(uv.x, uv.y, color, state.strength, dx, dy, 0.85)
+    // 静模式没有流速帮忙铺开：笔快了两次事件之间会「点断」。
+    // 沿路径补几个点，笔迹才像普通画布一样连续。
+    if (state.mode === 'still' && state.lastUV && rawLen > 0.008) {
+      const n = Math.ceil(rawLen / 0.008)
+      const from = state.lastUV
+      for (let i = 1; i <= n; i++) {
+        const t = i / n
+        engine.strokeInk(from.x + dx * t, from.y + dy * t, color, state.strength, nx, ny, 0.85)
+      }
+    } else {
+      engine.strokeInk(uv.x, uv.y, color, state.strength, nx, ny, 0.85)
+    }
     markActivity(uv)
     state.lastUV = uv
   }
@@ -175,7 +191,7 @@
   // ── 指针事件（鼠标 + 触摸统一）──
   // 同一套事件，按当前模式分发：墨模式走流体笔触，沙模式走倒沙放置。
   function pointerAct(uv, first) {
-    if (state.mode === 'ink' || state.mode === 'fine') {
+    if (state.mode !== 'sand') {
       userStroke(uv)
     } else if (sand) {
       const ny = 1 - uv.y           // 沙用顶→底坐标（UV 的 y=1 在顶部，需翻转）
@@ -217,7 +233,7 @@
   // 每隔 patience 秒，若用户已安静（停笔超过 YIELD_GRACE），才行动一次。
   // 落点会避开用户最近的笔迹 → 这就是“让位 / 退开留白”。
   function aiTick(now) {
-    if (state.mode === 'fine') { nextDropAt = now + state.aiPatience * 1000; return }
+    if (state.mode === 'fine' || state.mode === 'still') { nextDropAt = now + state.aiPatience * 1000; return }
     if (!state.aiOn) { nextDropAt = now + state.aiPatience * 1000; return }
     if (now < nextDropAt) return
     const sinceUser = now - state.lastUserActivity
@@ -227,7 +243,7 @@
       return
     }
     if (state.mode === 'ink') aiTickInk(now)
-    else aiTickSandStart(now)
+    else if (state.mode === 'sand') aiTickSandStart(now)
   }
 
   // 墨模式 AI：感知明暗自我收敛（暗了少画/提亮），并自己换色画一小段笔触
@@ -422,52 +438,64 @@
   sandButtons.forEach((b) => on(b, 'click', () => setEl(b.dataset.el)))
   setEl('sand')
 
-  // 墨 / 沙 模式切换（“同一个场，两种物态”：换笔 + 换物理，不是换程序）
+  // 墨 / 沙 / 精 / 静 模式切换（“同一个场，换笔 + 换物理，不是换程序”）
   const modeBtns = Array.from(document.querySelectorAll('.mode-btn'))
-  // 精细创作（fine art）：笔触更细、扩散更少、AI 完全让位；退出后恢复墨模式原参数。
-  const FINE_PARAMS = { SPLAT_RADIUS: 0.00035, SPLAT_VELOCITY: 0.1, CURL: 2 }
+  // 精（fine）：笔触更细、扩散更少；静（still）：零扩散，像普通画布。
+  // 两种都不让 AI 插手；退出时恢复墨模式原参数。
+  const MODE_PARAMS = {
+    fine:  { SPLAT_RADIUS: 0.00035, SPLAT_VELOCITY: 0.1, CURL: 2 },
+    still: { SPLAT_RADIUS: 0.00016, SPLAT_VELOCITY: 0,   CURL: 0 },
+  }
   let savedEngineParams = null
   let savedAiOn = true
+  function setAiUi(isOn) {
+    if (!aiToggle) return
+    aiToggle.classList.toggle('on', isOn)
+    aiToggle.classList.toggle('off', !isOn)
+    aiToggle.setAttribute('aria-pressed', String(isOn))
+    aiToggle.textContent = isOn ? I18N[state.lang].aiOn : I18N[state.lang].aiOff
+  }
   function setMode(m) {
-    // ── 精细模式进出：引擎参数与 AI 状态的切换 ──
-    if (m === 'fine' && state.mode !== 'fine') {
-      savedEngineParams = {
-        SPLAT_RADIUS: engine.config.SPLAT_RADIUS,
-        SPLAT_VELOCITY: engine.config.SPLAT_VELOCITY,
-        CURL: engine.config.CURL,
+    const params = MODE_PARAMS[m] || null
+    const wasCustom = !!MODE_PARAMS[state.mode]
+    if (params) {
+      // 第一次离开墨模式时，记住墨模式的原参数，退出时好还原
+      if (!savedEngineParams) {
+        savedEngineParams = {
+          SPLAT_RADIUS: engine.config.SPLAT_RADIUS,
+          SPLAT_VELOCITY: engine.config.SPLAT_VELOCITY,
+          CURL: engine.config.CURL,
+        }
+        savedAiOn = state.aiOn
       }
-      engine.config.SPLAT_RADIUS = FINE_PARAMS.SPLAT_RADIUS
-      engine.config.SPLAT_VELOCITY = FINE_PARAMS.SPLAT_VELOCITY
-      engine.config.CURL = FINE_PARAMS.CURL
-      savedAiOn = state.aiOn
+      engine.config.SPLAT_RADIUS = params.SPLAT_RADIUS
+      engine.config.SPLAT_VELOCITY = params.SPLAT_VELOCITY
+      engine.config.CURL = params.CURL
       state.aiOn = false
-      if (aiToggle) {
-        aiToggle.classList.remove('on'); aiToggle.classList.add('off')
-        aiToggle.setAttribute('aria-pressed', 'false')
-      }
-    }
-    if (m !== 'fine' && state.mode === 'fine' && savedEngineParams) {
+      setAiUi(false)
+      // 静：清掉残留流速，否则切进来之前那股墨还会继续飘一会儿
+      if (m === 'still' && engine.clearVelocity) engine.clearVelocity()
+    } else if (wasCustom && savedEngineParams) {
       engine.config.SPLAT_RADIUS = savedEngineParams.SPLAT_RADIUS
       engine.config.SPLAT_VELOCITY = savedEngineParams.SPLAT_VELOCITY
       engine.config.CURL = savedEngineParams.CURL
       state.aiOn = savedAiOn
-      if (aiToggle) {
-        aiToggle.classList.toggle('on', state.aiOn)
-        aiToggle.classList.toggle('off', !state.aiOn)
-        aiToggle.setAttribute('aria-pressed', String(state.aiOn))
-      }
+      setAiUi(state.aiOn)
+      savedEngineParams = null
     }
     state.mode = m
     document.body.classList.toggle('mode-sand', m === 'sand')
     document.body.classList.toggle('mode-ink', m !== 'sand')
     document.body.classList.toggle('mode-fine', m === 'fine')
+    document.body.classList.toggle('mode-still', m === 'still')
     modeBtns.forEach((b) => {
       const on2 = b.dataset.mode === m
       b.classList.toggle('active', on2)
       b.setAttribute('aria-selected', String(on2))
     })
     if (m === 'sand' && sand) sand.render(performance.now())  // 切回时立刻恢复沙画
-    const hintKey = m === 'sand' ? 'hintSand' : (m === 'fine' ? 'hintFine' : 'hintInk')
+    const hintKey = m === 'sand' ? 'hintSand'
+      : (m === 'fine' ? 'hintFine' : (m === 'still' ? 'hintStill' : 'hintInk'))
     setHint(I18N[state.lang][hintKey])
     state.drawing = false
     state.lastUV = null
@@ -494,7 +522,8 @@
     if (aiToggle) aiToggle.textContent = state.aiOn ? dict.aiOn : dict.aiOff
     const langBtn = $('lang')
     if (langBtn) langBtn.textContent = state.lang === 'zh' ? 'EN' : '中文'
-    const hintKey = state.mode === 'sand' ? 'hintSand' : (state.mode === 'fine' ? 'hintFine' : 'hintInk')
+    const hintKey = state.mode === 'sand' ? 'hintSand'
+      : (state.mode === 'fine' ? 'hintFine' : (state.mode === 'still' ? 'hintStill' : 'hintInk'))
     if (!hintGone) setHint(dict[hintKey])
     if (clearUndoArmed) setClearLabel(dict.undo)   // 撤回窗口开着时，标签随语言走
   }
@@ -551,6 +580,7 @@
     if (k === '1') { e.preventDefault(); setMode('ink'); return }
     if (k === '2') { if (!sand) return; e.preventDefault(); setMode('sand'); return }
     if (k === '3') { e.preventDefault(); setMode('fine'); return }
+    if (k === '4') { e.preventDefault(); setMode('still'); return }
     if (k === 's') { e.preventDefault(); const b = $('export'); if (b) b.click(); return }
     if (k === 'r') { e.preventDefault(); const b = $('clear'); if (b) b.click(); return }
     if (k === 'm') { e.preventDefault(); const b = $('movie'); if (b && !b.disabled) b.click(); return }

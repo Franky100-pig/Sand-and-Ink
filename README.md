@@ -18,6 +18,7 @@ A **fully offline, account-free, privacy-first** sandbox for unwinding. One canv
 - **Ink (Mode B)** — drop ink on water and watch it bleed.
 - **Sand (Mode A)** — a falling-sand sandbox with 9 materials.
 - **Fine art** — the AI steps aside completely; a finer brush and far less spread, so lines stay where you put them. What you painted in ink stays on the paper when you switch; press **Clear** for a fresh piece.
+- **Still** — zero spread: the ink stays exactly where you draw, like a plain canvas but with an ink-wash feel. The AI stays out of the way.
 
 ## Screenshots
 
@@ -67,7 +68,7 @@ Open `selftest.html` — two groups of checks (Ink 8, Sand 22) show PASS/FAIL. A
 - **Soundscape**: cycles off → rain → tide; synthesized live, 100% offline. Default off.
 - **Clear / Save / Save Movie**: Clear empties the paper; after clearing it becomes **Undo** for 10 seconds (no countdown) — click it to bring the painting back. Save exports PNG; Save Movie records ~15s (MP4, falls back to WebM).
 - **Hide (C)**: hides the toolbar; back with C or Esc.
-- **Keyboard**: `1`/`2`/`3` switch Ink/Sand/Fine · `S` save · `R` clear (undoable) · `M` record · `[`/`]` brush size · `C` hide / `Esc` show.
+- **Keyboard**: `1`/`2`/`3`/`4` switch Ink/Sand/Fine/Still · `S` save · `R` clear (undoable) · `M` record · `[`/`]` brush size · `C` hide / `Esc` show.
 
 ### Sand mode
 - **Ink / Sand / Fine**: segmented button swaps the five ink dots for nine material dots; physics switches fluid ↔ cellular automaton.

@@ -68,6 +68,7 @@ Open `selftest.html` — two groups of checks (Ink 8, Sand 22) show PASS/FAIL. A
 - **Soundscape**: cycles off → rain → tide; synthesized live, 100% offline. Default off.
 - **Clear / Save / Save Movie**: Clear empties the paper; after clearing it becomes **Undo** for 10 seconds (no countdown) — click it to bring the painting back. Save exports PNG; Save Movie records ~15s (MP4, falls back to WebM).
 - **Hide (C)**: hides the toolbar; back with C or Esc.
+- **Need Help?**: opens an in-app panel over the canvas — what this is, what to do if you're struggling, hotlines, and the disclaimer. Close with Esc, the backdrop, or the button.
 - **Keyboard**: `1`/`2`/`3`/`4` switch Ink/Sand/Fine/Still · `S` save · `R` clear (undoable) · `M` record · `[`/`]` brush size · `C` hide / `Esc` show.
 
 ### Sand mode
@@ -98,6 +99,8 @@ Open `selftest.html` — two groups of checks (Ink 8, Sand 22) show PASS/FAIL. A
 > 这是一个玩具，不是治疗，它不能替代专业帮助。如果你或身边的人正处于危机中，请主动求助——和受过训练的人聊聊，往往比想象中更有用。下面的热线都是免费且保密的。
 >
 > If you or someone you know is in crisis, please reach out. This is a toy, not therapy, and it cannot replace professional help. The lines below are free and confidential. **If there is immediate danger to life, call your local emergency number first.**
+
+The same list is inside the app: click **Need Help?** in the toolbar.
 
 | Region / 地区 | Hotline / 热线 | Hours / 服务时间 |
 | :-- | :-- | :-- |

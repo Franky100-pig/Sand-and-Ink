@@ -79,7 +79,34 @@
     <button id="export" class="ghost" data-i18n="save">存图</button>
     <button id="movie" class="ghost" data-i18n="movie" data-i18n-title="movieTip" title="把创作过程录成约 15 秒小视频">录制</button>
     <button id="hide" class="ghost" data-i18n="hide" data-i18n-title="hideTip" title="隐藏工具栏（快捷键 C）">隐藏</button>
+    <button id="help" class="ghost" data-i18n="help" aria-haspopup="dialog" aria-expanded="false">需要帮助？</button>
     <button id="lang" class="ghost" data-i18n-title="langTitle" title="切换语言 / Language">EN</button>
+  </div>
+
+  <!-- 求助浮层：盖在画布上，Esc / 点背景 / 关闭按钮都能退回。
+       内容顺序：功能说明 → 需要帮助时怎么办 + 热线 → 免责声明。 -->
+  <div id="help-modal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <h2 id="help-title" data-i18n="helpTitle">需要帮助？</h2>
+      <p data-i18n="helpAbout">这是一个离线小沙盒：水墨、沙、精细、静四种画法。没有账号、没有网络、不保存任何数据；它不评分、不诊断，也不能代替专业帮助。</p>
+      <p data-i18n="helpSteps">如果你正难受，或身边有人需要帮助：先找一个信任的人聊聊，或拨打下面的热线。它们免费、保密。</p>
+      <h3 data-i18n="helpHotlinesTitle">热线</h3>
+      <table class="hotlines">
+        <tbody>
+          <tr><th data-i18n="helpRegionCN">中国大陆</th><td>12356 · 010-82951332 · 400-161-9995</td></tr>
+          <tr><th data-i18n="helpRegionHK">中国香港</th><td>2389 2222 · 2896 0000 · 18111</td></tr>
+          <tr><th data-i18n="helpRegionTW">中国台湾</th><td>1925 · 1995 · 1980</td></tr>
+          <tr><th data-i18n="helpRegionMO">中国澳门</th><td>2826 1126 · 2852 5222</td></tr>
+          <tr><th data-i18n="helpRegionUS">US / Canada</th><td>988</td></tr>
+          <tr><th data-i18n="helpRegionUK">United Kingdom</th><td>116 123</td></tr>
+          <tr><th data-i18n="helpRegionAU">Australia</th><td>13 11 14</td></tr>
+        </tbody>
+      </table>
+      <p class="modal-note" data-i18n="helpNote">号码核对于 2026-10；请以官方最新公布为准。</p>
+      <p class="modal-disclaimer" data-i18n="helpDisclaimer">本站不提供医疗或心理服务，也不对你的情况承担责任。</p>
+      <p class="modal-disclaimer" data-i18n="helpEmergency">如有立即的生命危险，请先拨打当地急救电话（中国大陆 120 / 110）。</p>
+      <button id="help-close" class="ghost" data-i18n="helpClose">回到画布</button>
+    </div>
   </div>
 
   <p id="hint" data-i18n="hintInk">落笔，或让 AI 先画。你随时可以打断它。</p>

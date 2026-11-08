@@ -81,7 +81,31 @@
     <button id="export" class="ghost" data-i18n="save">存图</button>
     <button id="movie" class="ghost" data-i18n="movie" data-i18n-title="movieTip" title="把创作过程录成约 15 秒小视频">录制</button>
     <button id="hide" class="ghost" data-i18n="hide" data-i18n-title="hideTip" title="隐藏工具栏（快捷键 C）">隐藏</button>
+    <button id="help" class="ghost" data-i18n="help" aria-haspopup="dialog" aria-expanded="false">需要帮助？</button>
     <button id="lang" class="ghost" data-i18n-title="langTitle" title="切换语言 / Language">EN</button>
+  </div>
+  <div id="help-modal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <h2 id="help-title" data-i18n="helpTitle">需要帮助？</h2>
+      <p data-i18n="helpAbout">这是一个离线小沙盒：水墨、沙、精细、静四种画法。没有账号、没有网络、不保存任何数据；它不评分、不诊断，也不能代替专业帮助。</p>
+      <p data-i18n="helpSteps">如果你正难受，或身边有人需要帮助：先找一个信任的人聊聊，或拨打下面的热线。它们免费、保密。</p>
+      <h3 data-i18n="helpHotlinesTitle">热线</h3>
+      <table class="hotlines">
+        <tbody>
+          <tr><th data-i18n="helpRegionCN">中国大陆</th><td>12356 · 010-82951332 · 400-161-9995</td></tr>
+          <tr><th data-i18n="helpRegionHK">中国香港</th><td>2389 2222 · 2896 0000 · 18111</td></tr>
+          <tr><th data-i18n="helpRegionTW">中国台湾</th><td>1925 · 1995 · 1980</td></tr>
+          <tr><th data-i18n="helpRegionMO">中国澳门</th><td>2826 1126 · 2852 5222</td></tr>
+          <tr><th data-i18n="helpRegionUS">US / Canada</th><td>988</td></tr>
+          <tr><th data-i18n="helpRegionUK">United Kingdom</th><td>116 123</td></tr>
+          <tr><th data-i18n="helpRegionAU">Australia</th><td>13 11 14</td></tr>
+        </tbody>
+      </table>
+      <p class="modal-note" data-i18n="helpNote">号码核对于 2026-10；请以官方最新公布为准。</p>
+      <p class="modal-disclaimer" data-i18n="helpDisclaimer">本站不提供医疗或心理服务，也不对你的情况承担责任。</p>
+      <p class="modal-disclaimer" data-i18n="helpEmergency">如有立即的生命危险，请先拨打当地急救电话（中国大陆 120 / 110）。</p>
+      <button id="help-close" class="ghost" data-i18n="helpClose">回到画布</button>
+    </div>
   </div>
   <div id="panel">
     <h1>墨息 · 自检</h1>
@@ -645,6 +669,23 @@
         document.getElementById('stage').dispatchEvent(ctxEv)
         check('画布右键菜单被抑制（作画不被打断）', ctxEv.defaultPrevented === true,
               'prevented=' + ctxEv.defaultPrevented)
+
+        // v) 求助浮层：打开（含热线）、Esc 关闭、点背景关闭；打开时不触发画布快捷键
+        const helpBtn2 = document.getElementById('help')
+        const helpModal2 = document.getElementById('help-modal')
+        helpBtn2.click()
+        const helpOpen = helpModal2.hidden === false && helpModal2.textContent.indexOf('12356') >= 0
+        const modeBeforeHelp = state.mode
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }))
+        const shortcutIgnored = state.mode === modeBeforeHelp
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+        const helpClosed = helpModal2.hidden === true
+        check('求助浮层：Need Help? 可打开（含热线），Esc 关闭', helpOpen && helpClosed,
+              'open=' + helpOpen + ' closed=' + helpClosed)
+        check('求助浮层打开时画布快捷键被忽略', shortcutIgnored, 'mode=' + state.mode)
+        helpBtn2.click()
+        helpModal2.click()   // 点背景（target 就是浮层本身）
+        check('求助浮层：点背景可关闭', helpModal2.hidden === true, 'hidden=' + helpModal2.hidden)
 
         state.aiOn = false
         hook.setMode('ink')

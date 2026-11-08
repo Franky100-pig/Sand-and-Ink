@@ -47,6 +47,17 @@
       movie: '录制', movieStop: '停止', movieProcessing: '生成中…', movieTooShort: '录太短', movieUnsupported: '不支持',
       movieTip: '把创作过程录成约 15 秒小视频（再点一次结束）',
       langTitle: '切换语言 / Language',
+      help: '需要帮助？',
+      helpTitle: '需要帮助？',
+      helpAbout: '这是一个离线小沙盒：水墨、沙、精细、静四种画法。没有账号、没有网络、不保存任何数据；它不评分、不诊断，也不能代替专业帮助。',
+      helpSteps: '如果你正难受，或身边有人需要帮助：先找一个信任的人聊聊，或拨打下面的热线。它们免费、保密。',
+      helpHotlinesTitle: '热线',
+      helpRegionCN: '中国大陆', helpRegionHK: '中国香港', helpRegionTW: '中国台湾', helpRegionMO: '中国澳门',
+      helpRegionUS: 'US / Canada', helpRegionUK: 'United Kingdom', helpRegionAU: 'Australia',
+      helpNote: '号码核对于 2026-10；请以官方最新公布为准。',
+      helpDisclaimer: '本站不提供医疗或心理服务，也不对你的情况承担责任。',
+      helpEmergency: '如有立即的生命危险，请先拨打当地急救电话（中国大陆 120 / 110）。',
+      helpClose: '回到画布',
     },
     en: {
       modeInk: 'Ink', modeSand: 'Sand', modeFine: 'Fine', modeStill: 'Still',
@@ -75,6 +86,17 @@
       movie: 'Record', movieStop: 'Stop', movieProcessing: 'Encoding…', movieTooShort: 'Too short', movieUnsupported: 'No video',
       movieTip: 'Record your creation as a ~15s clip (tap again to finish)',
       langTitle: '切换语言 / Language',
+      help: 'Need Help?',
+      helpTitle: 'Need Help?',
+      helpAbout: 'This is an offline sandbox with four ways to unwind: ink, sand, fine art, still. No account, no network, nothing stored. It does not score, diagnose, or replace professional help.',
+      helpSteps: 'If you are struggling, or someone you know needs help: talk to someone you trust, or call a hotline below. They are free and confidential.',
+      helpHotlinesTitle: 'Hotlines',
+      helpRegionCN: 'Mainland China', helpRegionHK: 'Hong Kong, China', helpRegionTW: 'Taiwan, China', helpRegionMO: 'Macao, China',
+      helpRegionUS: 'US / Canada', helpRegionUK: 'United Kingdom', helpRegionAU: 'Australia',
+      helpNote: 'Numbers checked Oct 2026; refer to the official line for the latest.',
+      helpDisclaimer: 'This site does not provide medical or psychological services and accepts no liability for your situation.',
+      helpEmergency: 'If there is immediate danger to life, call your local emergency number first (120 / 110 in mainland China).',
+      helpClose: 'Back to canvas',
     },
   }
 
@@ -574,6 +596,11 @@
       t.tagName === 'SELECT' || t.isContentEditable)
   }
   on(window, 'keydown', (e) => {
+    // 求助浮层打开时：只认 Esc，且不触发画布快捷键
+    if (helpModal && !helpModal.hidden) {
+      if (e.key === 'Escape') { e.preventDefault(); closeHelp() }
+      return
+    }
     if (e.metaKey || e.ctrlKey || e.altKey) return       // 不抢系统 / 浏览器快捷键
     if (isTypingTarget(e.target)) return                 // 在滑块等控件里正常操作
     const k = e.key.toLowerCase()
@@ -592,6 +619,26 @@
     }
   })
   on($('hide'), 'click', toggleBarHidden)
+
+  // ── 求助浮层（Need Help?）──
+  // 盖在画布上；Esc、点背景、关闭按钮都能退回，且不打断正在进行的作画。
+  const helpBtn = $('help')
+  const helpModal = $('help-modal')
+  const helpCloseBtn = $('help-close')
+  function openHelp() {
+    if (!helpModal) return
+    helpModal.hidden = false
+    if (helpBtn) helpBtn.setAttribute('aria-expanded', 'true')
+    if (helpCloseBtn) helpCloseBtn.focus()
+  }
+  function closeHelp() {
+    if (!helpModal || helpModal.hidden) return
+    helpModal.hidden = true
+    if (helpBtn) { helpBtn.setAttribute('aria-expanded', 'false'); helpBtn.focus() }
+  }
+  on(helpBtn, 'click', openHelp)
+  on(helpCloseBtn, 'click', closeHelp)
+  on(helpModal, 'click', (e) => { if (e.target === helpModal) closeHelp() })  // 点背景关闭
 
   const brushInput = $('brush')
   function adjustBrush(delta) {

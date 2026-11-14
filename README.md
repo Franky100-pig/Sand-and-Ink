@@ -91,6 +91,10 @@ Open `selftest.html` — two groups of checks (Ink 8, Sand 22) show PASS/FAIL. A
 
 ## Ideas for later
 
+The living roadmap (with verified gaps and cost-ranked candidates) lives in
+[IDEAS.md § 9](IDEAS.md#九后续迭代方向2026-10-06-讨论--暂未拍板) — top pick so far:
+a **timeline replay** built on the existing 1200-frame recording buffer (review, undo, and keep the piece in one feature).
+
 - The AI's ink **physically retreats** when the user paints (inject reverse velocity, not just "no new strokes").
 - Upgrade the dumb AI to a sketch-RNN-style stroke-sequence model (still optional, still offline).
 
